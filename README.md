@@ -20,11 +20,17 @@ go run . ".\bin\audiofiles\02 - Legacy.mp3"
 Cuando se recibe una ruta por línea de comandos, Aura la agrega y comienza a
 reproducirla. Esto permite asociaciones de archivo y pruebas directas.
 
-Para crear un ejecutable de Windows sin consola:
+Para crear un ejecutable de Windows sin consola y con el icono propio de Aura:
 
 ```powershell
+go generate .
 go build -ldflags "-H=windowsgui -s -w" -o build/bin/aura-native.exe .
 ```
+
+`go generate .` reconstruye los recursos `rsrc_windows_*.syso` desde
+`assets/aura-icon.png`; solo hace falta ejecutarlo cuando cambie el icono. El
+ejecutable generado usa ese recurso en Explorer, el selector de ventanas y la
+barra de tareas.
 
 Todas las pistas se normalizan por streaming a PCM estéreo de 48 kHz antes de
 entrar a Oto. Una misma cola puede mezclar archivos con frecuencias de muestreo
