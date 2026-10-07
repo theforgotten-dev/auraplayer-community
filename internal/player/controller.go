@@ -12,6 +12,7 @@ import (
 
 	"playerdoit/internal/audio"
 	"playerdoit/internal/audio/otoengine"
+	"playerdoit/internal/audio/pipeline"
 	"playerdoit/internal/codecs"
 )
 
@@ -33,7 +34,6 @@ type Track struct {
 	Duration   float64 `json:"duration"`
 	SampleRate int     `json:"sampleRate"`
 	Channels   int     `json:"channels"`
-	config     audio.Config
 }
 
 type Snapshot struct {
@@ -49,7 +49,6 @@ type Controller struct {
 	mu sync.Mutex
 
 	engine       audio.Engine
-	engineConfig audio.Config
 	player       audio.Player
 	source       *os.File
 	queue        []Track
@@ -263,20 +262,23 @@ func (c *Controller) loadLocked(index int) error {
 		return err
 	}
 
+	outputConfig := pipeline.OutputConfig()
+	normalized, err := pipeline.Normalize(stream.PCM, stream.Config, outputConfig)
+	if err != nil {
+		file.Close()
+		return err
+	}
+
 	if c.engine == nil {
-		engine, err := otoengine.New(stream.Config)
+		engine, err := otoengine.New(outputConfig)
 		if err != nil {
 			file.Close()
 			return err
 		}
 		c.engine = engine
-		c.engineConfig = stream.Config
-	} else if !samePCMConfig(c.engineConfig, stream.Config) {
-		file.Close()
-		return fmt.Errorf("%q uses %d Hz; this session is configured for %d Hz", track.Title, stream.Config.SampleRate, c.engineConfig.SampleRate)
 	}
 
-	pcmPlayer := c.engine.NewPlayer(stream.PCM)
+	pcmPlayer := c.engine.NewPlayer(normalized)
 	if err := pcmPlayer.SetVolume(c.volume); err != nil {
 		pcmPlayer.Close()
 		file.Close()
@@ -364,12 +366,5 @@ func inspectTrack(path string) (Track, error) {
 		Duration:   stream.Duration.Seconds(),
 		SampleRate: stream.Config.SampleRate,
 		Channels:   stream.Config.ChannelCount,
-		config:     stream.Config,
 	}, nil
-}
-
-func samePCMConfig(left, right audio.Config) bool {
-	return left.SampleRate == right.SampleRate &&
-		left.ChannelCount == right.ChannelCount &&
-		left.Format == right.Format
 }
