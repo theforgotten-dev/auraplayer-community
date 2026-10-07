@@ -4,6 +4,7 @@ go 1.27.1
 
 require (
 	github.com/ebitengine/oto/v3 v3.5.1
+	github.com/gopxl/beep/v2 v2.1.1
 	github.com/hajimehoshi/go-mp3 v0.3.4
 	github.com/wailsapp/wails/v2 v2.16.0
 )

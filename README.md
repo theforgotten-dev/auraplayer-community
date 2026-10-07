@@ -21,6 +21,9 @@ go run github.com/wailsapp/wails/v2/cmd/wails@v2.16.0 build -clean
 El resultado queda en `build/bin/aura-player.exe`. En Windows se requiere el
 runtime de WebView2. Desde la aplicación se pueden agregar varios MP3, navegar
 la cola, reproducir, pausar, detener, buscar una posición y ajustar el volumen.
+Todas las pistas se normalizan por streaming a PCM estéreo de 48 kHz antes de
+entrar a Oto, por lo que una cola puede mezclar archivos con frecuencias de
+muestreo diferentes.
 
 Atajos: `Espacio` reproduce o pausa, `j`/`k` recorren la cola, `Enter` reproduce
 la selección y `Ctrl+O` abre el selector de archivos.
