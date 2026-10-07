@@ -78,6 +78,7 @@ type UI struct {
 	fileResults   chan fileResult
 	decorations   widget.Decorations
 	dropTarget    fileDropTarget
+	taskbarIcon   taskbarIcon
 
 	openButton     widget.Clickable
 	compactButton  widget.Clickable
@@ -145,6 +146,9 @@ func (ui *UI) loop() error {
 		ui.explorer.ListenEvents(event)
 		if err := ui.dropTarget.handleEvent(event, ui.enqueueDroppedFiles, ui.window.Run); err != nil {
 			ui.message = "ERR:: file drop: " + err.Error()
+		}
+		if err := ui.taskbarIcon.handleEvent(event, ui.window.Run); err != nil {
+			ui.message = "ERR:: window icon: " + err.Error()
 		}
 		switch event := event.(type) {
 		case app.DestroyEvent:
