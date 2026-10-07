@@ -1,5 +1,7 @@
 /bin/
 /dist/
+/build/
+/frontend/wailsjs/
 *.exe
 *.test
 coverage.out

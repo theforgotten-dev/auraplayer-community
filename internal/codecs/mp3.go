@@ -3,6 +3,7 @@ package codecs
 import (
 	"fmt"
 	"io"
+	"time"
 
 	gomp3 "github.com/hajimehoshi/go-mp3"
 
@@ -17,12 +18,25 @@ func (mp3Decoder) Decode(source io.Reader) (Stream, error) {
 		return Stream{}, fmt.Errorf("decode MP3: %w", err)
 	}
 
+	config := audio.Config{
+		SampleRate:   decoded.SampleRate(),
+		ChannelCount: 2,
+		Format:       audio.FormatSignedInt16LE,
+	}
+
 	return Stream{
-		PCM: decoded,
-		Config: audio.Config{
-			SampleRate:   decoded.SampleRate(),
-			ChannelCount: 2,
-			Format:       audio.FormatSignedInt16LE,
-		},
+		PCM:      decoded,
+		Config:   config,
+		Duration: pcmDuration(decoded.Length(), config.SampleRate, 4),
 	}, nil
+}
+
+func pcmDuration(byteLength int64, sampleRate, bytesPerFrame int) time.Duration {
+	if byteLength <= 0 || sampleRate <= 0 || bytesPerFrame <= 0 {
+		return 0
+	}
+	bytesPerSecond := int64(sampleRate * bytesPerFrame)
+	seconds := byteLength / bytesPerSecond
+	remainder := byteLength % bytesPerSecond
+	return time.Duration(seconds)*time.Second + time.Duration(remainder)*time.Second/time.Duration(bytesPerSecond)
 }
