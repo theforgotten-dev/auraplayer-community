@@ -41,9 +41,10 @@ const (
 )
 
 type fileResult struct {
-	paths []string
-	skin  *Skin
-	err   error
+	paths   []string
+	skin    *Skin
+	err     error
+	dropped bool
 }
 
 type UI struct {
@@ -76,6 +77,7 @@ type UI struct {
 	windowMode    app.WindowMode
 	fileResults   chan fileResult
 	decorations   widget.Decorations
+	dropTarget    fileDropTarget
 
 	openButton     widget.Clickable
 	compactButton  widget.Clickable
@@ -119,7 +121,7 @@ func newUI(window *app.Window, initialPaths []string) *UI {
 		theme:        theme,
 		skin:         skin,
 		compactMode:  true,
-		fileResults:  make(chan fileResult, 2),
+		fileResults:  make(chan fileResult, 16),
 		queueButtons: make(map[string]*widget.Clickable),
 	}
 	ui.palette = paletteFor(ui.skin)
@@ -141,6 +143,9 @@ func (ui *UI) loop() error {
 	for {
 		event := ui.window.Event()
 		ui.explorer.ListenEvents(event)
+		if err := ui.dropTarget.handleEvent(event, ui.enqueueDroppedFiles, ui.window.Run); err != nil {
+			ui.message = "ERR:: file drop: " + err.Error()
+		}
 		switch event := event.(type) {
 		case app.DestroyEvent:
 			return event.Err
@@ -622,7 +627,7 @@ func (ui *UI) layoutQueue(gtx layout.Context) layout.Dimensions {
 			layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 				if len(ui.state.Queue) == 0 {
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						return ui.label(gtx, "[ ]\n\nQUEUE_EMPTY\nUSE [ + LOAD MP3 ]\nOR DRAG FILES", 9, ui.palette.Muted, false)
+						return ui.label(gtx, "[ ]\n\nQUEUE_EMPTY\nUSE [ + LOAD MP3 ]\nOR DROP MP3 ANYWHERE", 9, ui.palette.Muted, false)
 					})
 				}
 				return material.List(ui.theme, &ui.queueList).Layout(gtx, len(ui.state.Queue), func(gtx layout.Context, index int) layout.Dimensions {
@@ -1087,8 +1092,24 @@ func (ui *UI) receiveFiles() {
 				ui.message = "ERR:: " + result.err.Error()
 				continue
 			}
+			if result.dropped {
+				accepted, err := acceptedDroppedMP3(result.paths)
+				if err != nil {
+					ui.message = "ERR:: " + err.Error()
+					continue
+				}
+				result.paths = accepted
+			}
 			if len(result.paths) > 0 {
-				ui.runAction(ui.controller.AddFiles(result.paths))
+				queueWasEmpty := len(ui.state.Queue) == 0
+				err := ui.controller.AddFiles(result.paths)
+				if err == nil && result.dropped && queueWasEmpty {
+					err = ui.controller.Play(0)
+				}
+				ui.runAction(err)
+				if err == nil && result.dropped {
+					ui.message = fmt.Sprintf("DROP:: %d MP3 RECEIVED", len(result.paths))
+				}
 			}
 			if result.skin != nil {
 				ui.applySkin(*result.skin)
@@ -1098,6 +1119,16 @@ func (ui *UI) receiveFiles() {
 			return
 		}
 	}
+}
+
+func (ui *UI) enqueueDroppedFiles(paths []string) {
+	result := fileResult{paths: paths, dropped: true}
+	select {
+	case ui.fileResults <- result:
+	default:
+		return
+	}
+	ui.window.Invalidate()
 }
 
 func (ui *UI) applySkin(skin Skin) {

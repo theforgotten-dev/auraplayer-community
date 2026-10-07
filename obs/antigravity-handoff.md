@@ -62,6 +62,11 @@ Pasar uno o más MP3 como argumentos agrega la cola y reproduce el primero.
 También se pueden cargar varios archivos desde el botón `[ LOAD MP3 ]`, que
 usa `gioui.org/x/explorer` y el diálogo nativo de Windows.
 
+En Windows, la ventana acepta hasta 256 MP3 por operación de drag and drop desde
+Explorer. El receptor usa `WM_DROPFILES` mediante una subclase instalada en el
+hilo nativo de Gio. Las rutas se validan y se entregan al loop de UI por canal;
+si la cola estaba vacía, comienza a reproducirse el primer archivo recibido.
+
 ## Verificación realizada
 
 ```powershell

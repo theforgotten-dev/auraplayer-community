@@ -7,8 +7,10 @@ renderizada directamente por GPU. No utiliza WebView, HTML ni JavaScript.
 ## Aura Desktop
 
 La aplicación permite agregar varios MP3 mediante el selector nativo del
-sistema, navegar la cola, reproducir, pausar, detener, buscar una posición y
-ajustar el volumen.
+sistema o arrastrándolos desde Explorer sobre cualquier punto de la ventana.
+Los archivos soltados se validan, se agregan a la cola y el primero comienza a
+reproducirse cuando la cola estaba vacía. También permite navegar la cola,
+reproducir, pausar, detener, buscar una posición y ajustar el volumen.
 
 ```powershell
 go run .
@@ -31,7 +33,7 @@ diferentes.
 El monitor central calcula una FFT de 2048 muestras sobre el PCM normalizado y
 dibuja 16 bandas logarítmicas entre 40 Hz y 20 kHz. Los canales izquierdo y
 derecho se procesan y representan por separado. La interfaz pide nuevos frames
-30 veces por segundo únicamente mientras el audio se está reproduciendo.
+60 veces por segundo mientras el audio se reproduce o decaen las barras.
 
 ## Skins nativas
 
