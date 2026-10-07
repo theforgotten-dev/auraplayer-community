@@ -1,94 +1,93 @@
 # playerdoit
 
-Reproductor de audio modular en Go. Usa Oto v3 como motor de flujos PCM y
-`go-mp3` para decodificar MP3 durante la reproducción.
+Reproductor de audio modular escrito en Go. Usa Oto v3 como motor PCM,
+`go-mp3` para decodificación por streaming y Gio para una interfaz de escritorio
+renderizada directamente por GPU. No utiliza WebView, HTML ni JavaScript.
 
 ## Aura Desktop
 
-La rama de UI incluye una aplicación de escritorio construida con Wails v2 y
-un frontend HTML/CSS/JavaScript embebido. No requiere Node para compilar.
+La aplicación permite agregar varios MP3 mediante el selector nativo del
+sistema, navegar la cola, reproducir, pausar, detener, buscar una posición y
+ajustar el volumen.
 
 ```powershell
 go run .
+go run . ".\bin\audiofiles\02 - Legacy.mp3"
 ```
 
-Para generar el ejecutable de producción:
+Cuando se recibe una ruta por línea de comandos, Aura la agrega y comienza a
+reproducirla. Esto permite asociaciones de archivo y pruebas directas.
+
+Para crear un ejecutable de Windows sin consola:
 
 ```powershell
-go run github.com/wailsapp/wails/v2/cmd/wails@v2.16.0 build -clean
+go build -ldflags "-H=windowsgui -s -w" -o build/bin/aura-native.exe .
 ```
 
-El resultado queda en `build/bin/aura-player.exe`. En Windows se requiere el
-runtime de WebView2. Desde la aplicación se pueden agregar varios MP3, navegar
-la cola, reproducir, pausar, detener, buscar una posición y ajustar el volumen.
 Todas las pistas se normalizan por streaming a PCM estéreo de 48 kHz antes de
-entrar a Oto, por lo que una cola puede mezclar archivos con frecuencias de
-muestreo diferentes.
+entrar a Oto. Una misma cola puede mezclar archivos con frecuencias de muestreo
+diferentes.
 
 El monitor central calcula una FFT de 2048 muestras sobre el PCM normalizado y
-muestra 16 bandas logarítmicas entre 40 Hz y 20 kHz. Los canales izquierdo y
-derecho se analizan por separado, incluyendo sus niveles generales. La consulta
-visual se realiza de forma independiente al estado de la cola.
+dibuja 16 bandas logarítmicas entre 40 Hz y 20 kHz. Los canales izquierdo y
+derecho se procesan y representan por separado. La interfaz pide nuevos frames
+30 veces por segundo únicamente mientras el audio se está reproduciendo.
 
-### Skins y mods visuales
+## Skins nativas
 
-El botón `[ SKINS ]` permite escoger una de las apariencias incluidas o importar
-un manifiesto JSON local. La skin activa se conserva entre ejecuciones. Hay un
-ejemplo completo en `skins/ice-terminal.json`:
+El botón `[ SKINS ]` abre el gestor de apariencias. Incluye `PHOSPHOR_GREEN`,
+`AMBER_CRT` y `CYBER_VIOLET`, además de importar manifiestos JSON. La skin activa
+se guarda en la carpeta de configuración del usuario.
+
+Un ejemplo completo está disponible en `skins/ice-terminal.json`:
 
 ```json
 {
   "version": 1,
   "name": "MI_SKIN",
-  "variables": {
-    "--bg": "#050505",
-    "--green": "#00ff88",
-    "--channel-left": "#00ff88",
-    "--channel-right": "#00ddff"
+  "author": "Nombre",
+  "colors": {
+    "background": "#050505",
+    "panel": "#08100d",
+    "accent": "#00ff88",
+    "channelLeft": "#00ff88",
+    "channelRight": "#00ddff"
   },
-  "css": ".panel { border-width: 2px; }"
+  "metrics": {
+    "spacing": 8,
+    "cornerRadius": 0,
+    "strokeWidth": 1
+  }
 }
 ```
 
-`variables` admite propiedades CSS personalizadas y `css` permite modificar la
-composición visual completa. Los manifiestos se validan antes de aplicarse y su
-tamaño máximo es 256 KiB.
-
-Atajos: `Espacio` reproduce o pausa, `j`/`k` recorren la cola, `Enter` reproduce
-la selección y `Ctrl+O` abre el selector de archivos.
+Los colores disponibles son `background`, `panel`, `panelRaised`, `line`,
+`lineHot`, `text`, `muted`, `accent`, `channelLeft`, `channelRight` y `danger`.
+Se aceptan valores `#RRGGBB` y `#RRGGBBAA`. El manifiesto se valida antes de
+aplicarse y tiene un límite de 256 KiB.
 
 ## CLI
 
-Los archivos MP3 se detectan por su extensión, se decodifican por streaming y
-se envían como PCM al motor:
+Los MP3 se detectan por extensión, se decodifican por streaming y se envían al
+motor como PCM:
 
 ```powershell
 go run ./cmd/player ./audio.mp3
 ```
 
-También se admite PCM crudo. Sus valores predeterminados son 44.1 kHz, estéreo
+También se admite PCM crudo. Los valores predeterminados son 44.1 kHz, estéreo
 y signed 16-bit little-endian:
 
 ```powershell
 go run ./cmd/player ./audio.pcm
-```
-
-También se pueden indicar el formato del flujo:
-
-```powershell
 go run ./cmd/player -rate 48000 -channels 1 -format f32le ./audio.pcm
 ```
 
-Formatos disponibles: `s16le`, `u8` y `f32le`.
-
-## Compilar
-
-```powershell
-go build -o bin/playerdoit.exe ./cmd/player
-```
+Formatos PCM disponibles: `s16le`, `u8` y `f32le`.
 
 ## Verificar
 
 ```powershell
 go test ./...
+go vet ./...
 ```

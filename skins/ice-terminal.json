@@ -2,21 +2,18 @@
   "version": 1,
   "name": "ICE_TERMINAL",
   "author": "playerdoit example",
-  "variables": {
-    "--bg": "#030a10",
-    "--surface": "#07141d",
-    "--line": "#164a63",
-    "--line-hot": "#35c9ff",
-    "--text": "#d7f6ff",
-    "--muted": "#6a91a1",
-    "--green": "#35c9ff",
-    "--cyan": "#91fff2",
-    "--danger": "#ff667f",
-    "--panel-bg": "rgba(5, 17, 25, .97)",
-    "--control-bg": "#07141d",
-    "--visualizer-bg": "#02080d",
-    "--channel-left": "#35c9ff",
-    "--channel-right": "#91fff2"
+  "colors": {
+    "background": "#030a10",
+    "panel": "#051119",
+    "panelRaised": "#071923",
+    "line": "#164a63",
+    "lineHot": "#35c9ff",
+    "text": "#d7f6ff",
+    "muted": "#6a91a1",
+    "accent": "#35c9ff",
+    "channelLeft": "#35c9ff",
+    "channelRight": "#91fff2",
+    "danger": "#ff667f"
   },
-  "css": ".brand-mark { border-style: double; }\n.visualizer { background-size: 100% 20%, 6.25% 100%; }"
+  "metrics": { "spacing": 8, "cornerRadius": 0, "strokeWidth": 1 }
 }
