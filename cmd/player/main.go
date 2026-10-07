@@ -37,6 +37,7 @@ func run() error {
 	}
 
 	path := flag.Arg(0)
+	// #nosec G304 -- the CLI is explicitly designed to open its user-supplied path.
 	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("open audio file: %w", err)

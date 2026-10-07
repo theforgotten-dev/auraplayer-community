@@ -28,3 +28,26 @@ func TestLoadSkinRejectsUnknownColor(t *testing.T) {
 		t.Fatal("expected unknown color to be rejected")
 	}
 }
+
+func TestLoadSkinRejectsTrailingJSON(t *testing.T) {
+	_, err := loadSkin(strings.NewReader(`{"version":1,"name":"TEST"} {"version":1,"name":"SECOND"}`))
+	if err == nil {
+		t.Fatal("expected a second JSON value to be rejected")
+	}
+}
+
+func TestLoadSkinEnforcesSizeLimit(t *testing.T) {
+	prefix := `{"version":1,"name":"TEST"}`
+	oversized := prefix + strings.Repeat(" ", maxSkinSize-len(prefix)+1)
+	_, err := loadSkin(strings.NewReader(oversized))
+	if err == nil {
+		t.Fatal("expected an oversized skin to be rejected")
+	}
+}
+
+func TestLoadSkinRejectsControlCharactersInMetadata(t *testing.T) {
+	_, err := loadSkin(strings.NewReader("{\"version\":1,\"name\":\"TEST\\nINJECTED\"}"))
+	if err == nil {
+		t.Fatal("expected control characters in the skin name to be rejected")
+	}
+}

@@ -209,7 +209,9 @@ func (s *pcm16Streamer) Stream(samples [][2]float64) (int, bool) {
 	frames := read / 4
 	for index := 0; index < frames; index++ {
 		offset := index * 4
+		// #nosec G115 -- signed PCM uses the same 16 bits in two's-complement form.
 		left := int16(binary.LittleEndian.Uint16(buffer[offset : offset+2]))
+		// #nosec G115 -- signed PCM uses the same 16 bits in two's-complement form.
 		right := int16(binary.LittleEndian.Uint16(buffer[offset+2 : offset+4]))
 		samples[index][0] = float64(left) / 32768
 		samples[index][1] = float64(right) / 32768
@@ -222,7 +224,9 @@ func (s *pcm16Streamer) Err() error { return s.err }
 func encodeS16LE(destination []byte, samples [][2]float64) {
 	for index, sample := range samples {
 		offset := index * 4
+		// #nosec G115 -- encoding S16LE requires the two's-complement bit pattern.
 		binary.LittleEndian.PutUint16(destination[offset:offset+2], uint16(floatToInt16(sample[0])))
+		// #nosec G115 -- encoding S16LE requires the two's-complement bit pattern.
 		binary.LittleEndian.PutUint16(destination[offset+2:offset+4], uint16(floatToInt16(sample[1])))
 	}
 }
