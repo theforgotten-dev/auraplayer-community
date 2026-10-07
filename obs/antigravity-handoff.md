@@ -123,6 +123,11 @@ maximizar/restaurar y cerrar. Las acciones se envían mediante
 `system.Action`, por lo que la implementación no depende de llamadas Win32 y
 conserva el redimensionado en los bordes que ofrece Gio.
 
+El modo compacto es ahora la presentación inicial. La ventana abre en 720 ×
+458 px incluyendo los 38 px de la barra propia, con cola, contexto, espectro y
+transporte visibles. El botón `[ FULL ]` conserva la transición a la vista de
+1280 × 818 px.
+
 ## Skins
 
 El gestor ofrece `PHOSPHOR_GREEN`, `AMBER_CRT` y `CYBER_VIOLET`. Una skin JSON

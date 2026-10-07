@@ -33,8 +33,8 @@ import (
 const (
 	windowWidth   = 1280
 	windowHeight  = 780
-	compactWidth  = 760
-	compactHeight = 460
+	compactWidth  = 720
+	compactHeight = 420
 	minWidth      = 600
 	minHeight     = 360
 	windowBarH    = 38
@@ -99,7 +99,7 @@ func Run(initialPaths []string) error {
 	window.Option(
 		app.Title("Aura Music Player"),
 		app.Decorated(false),
-		app.Size(unit.Dp(windowWidth), unit.Dp(windowHeight+windowBarH)),
+		app.Size(unit.Dp(compactWidth), unit.Dp(compactHeight+windowBarH)),
 		app.MinSize(unit.Dp(minWidth), unit.Dp(minHeight+windowBarH)),
 	)
 	ui := newUI(window, initialPaths)
@@ -118,6 +118,7 @@ func newUI(window *app.Window, initialPaths []string) *UI {
 		controller:   player.NewController(),
 		theme:        theme,
 		skin:         skin,
+		compactMode:  true,
 		fileResults:  make(chan fileResult, 2),
 		queueButtons: make(map[string]*widget.Clickable),
 	}
