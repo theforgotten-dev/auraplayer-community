@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"playerdoit/internal/audio"
 )
 
 // Stream is decoded PCM together with the format required by the audio engine.
 type Stream struct {
-	PCM    io.ReadSeeker
-	Config audio.Config
+	PCM      io.ReadSeeker
+	Config   audio.Config
+	Duration time.Duration
 }
 
 // Decoder converts an encoded source into a seekable PCM stream.
