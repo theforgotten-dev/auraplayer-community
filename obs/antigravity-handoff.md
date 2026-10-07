@@ -100,8 +100,8 @@ Git.
 
 ## Integración de la revisión de Antigravity
 
-La revisión retomada añade un modo compacto, una vista de contexto inspirada en
-Amarok y animación del espectro a 60 FPS. Durante su integración se corrigió
+La revisión retomada añade un modo compacto, una vista de contexto propia y
+animación del espectro a 60 FPS. Durante su integración se corrigió
 `rowBox`: el helper usaba el máximo disponible para calcular el fondo de las
 insignias y hacía que la primera insignia de `NOW_PLAYING` cubriera el panel del
 espectro. Ahora mide primero el contenido, pinta fondo y borde con ese tamaño y

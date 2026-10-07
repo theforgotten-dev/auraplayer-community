@@ -445,7 +445,7 @@ func (ui *UI) layoutHeader(gtx layout.Context) layout.Dimensions {
 				})
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				modeText := "[ ◰ AMAROK ]"
+				modeText := "[ ◰ COMPACT ]"
 				if compact {
 					modeText = "[ ◰ FULL ]"
 				}
@@ -466,17 +466,17 @@ func (ui *UI) layoutWorkspace(gtx layout.Context) layout.Dimensions {
 	if ui.isCompact(gtx) {
 		return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
 			layout.Flexed(0.85, ui.layoutQueue),
-			layout.Flexed(1.4, ui.layoutAmarokContextView),
+			layout.Flexed(1.4, ui.layoutPlayerContext),
 		)
 	}
 	return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
 		layout.Flexed(.85, ui.layoutQueue),
-		layout.Flexed(1.45, ui.layoutAmarokContextView),
+		layout.Flexed(1.45, ui.layoutPlayerContext),
 		layout.Flexed(.85, ui.layoutMetadata),
 	)
 }
 
-func (ui *UI) layoutAmarokContextView(gtx layout.Context) layout.Dimensions {
+func (ui *UI) layoutPlayerContext(gtx layout.Context) layout.Dimensions {
 	return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
 		layout.Rigid(ui.layoutNowPlayingCard),
 		layout.Flexed(1, ui.layoutSpectrum),
@@ -512,7 +512,7 @@ func (ui *UI) layoutNowPlayingCard(gtx layout.Context) layout.Dimensions {
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 						glyph := "[●══●]\n|░░░░|\n[AURA]"
 						if ui.state.State == player.StatePlaying {
-							glyph = "[▶══●]\n|████|\n[AMRK]"
+							glyph = "[▶══●]\n|████|\n[PLAY]"
 						}
 						return ui.label(gtx, glyph, 8, ui.palette.Accent, true)
 					})
@@ -526,7 +526,7 @@ func (ui *UI) layoutNowPlayingCard(gtx layout.Context) layout.Dimensions {
 						if ui.state.CurrentIndex >= 0 {
 							trackNo = fmt.Sprintf("%02d/%02d", ui.state.CurrentIndex+1, len(ui.state.Queue))
 						}
-						return ui.label(gtx, "// AMAROK_CONTEXT · NOW_PLAYING ["+trackNo+"]", 8, ui.palette.Muted, true)
+						return ui.label(gtx, "// PLAYER_CONTEXT · NOW_PLAYING ["+trackNo+"]", 8, ui.palette.Muted, true)
 					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						return ui.singleLine(gtx, title, 13, ui.palette.Text)
@@ -609,7 +609,7 @@ func (ui *UI) layoutQueue(gtx layout.Context) layout.Dimensions {
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 					layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-						return ui.heading(gtx, "// AMAROK_COLLECTION", fmt.Sprintf("QUEUE [%02d]", len(ui.state.Queue)))
+						return ui.heading(gtx, "// MEDIA_COLLECTION", fmt.Sprintf("QUEUE [%02d]", len(ui.state.Queue)))
 					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						if len(ui.state.Queue) == 0 {
