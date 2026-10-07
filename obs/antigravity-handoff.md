@@ -39,8 +39,14 @@ Aura es un reproductor MP3 nativo escrito en Go con:
 - `skins/ice-terminal.json`: ejemplo de skin externa.
 
 El frontend consulta el espectro directamente en memoria. `dsp.Spectrum` usa
-arreglos fijos para evitar slices nuevos en cada frame. Gio sólo solicita 30
-FPS durante reproducción; el estado general se actualiza cada 200 ms.
+arreglos fijos para evitar slices nuevos en cada frame. Gio solicita 60 FPS
+durante reproducción y mientras decaen las barras; el estado general se
+actualiza cada 200 ms.
+
+El analizador usa una ventana Hann de 2048 muestras y un salto de 512 muestras.
+El buffer circular permite ventanas solapadas sin desplazar ni volver a asignar
+los arreglos de muestras. La UI aplica ataque inmediato, caída temporal y picos
+con retención por separado para ambos canales.
 
 ## Ejecutar y compilar
 
@@ -63,7 +69,8 @@ go test ./...
 go vet ./...
 ```
 
-Ambos comandos pasan en `c2e6149`.
+Ambos comandos pasan con la revisión de Antigravity integrada en
+`feature/gio-ui`.
 
 Las pruebas de `internal/dsp` comprueban:
 
@@ -91,6 +98,24 @@ generales. La restauración del layout se verificó visualmente en
 `build/gio-equalizer-restored.png`; los archivos de `build/` no forman parte de
 Git.
 
+## Integración de la revisión de Antigravity
+
+La revisión retomada añade un modo compacto, una vista de contexto inspirada en
+Amarok y animación del espectro a 60 FPS. Durante su integración se corrigió
+`rowBox`: el helper usaba el máximo disponible para calcular el fondo de las
+insignias y hacía que la primera insignia de `NOW_PLAYING` cubriera el panel del
+espectro. Ahora mide primero el contenido, pinta fondo y borde con ese tamaño y
+reproduce después las operaciones del contenido.
+
+También se corrigió la presentación de mensajes. Los errores ya no duplican el
+prefijo `ERR::` y las confirmaciones, como el cambio de skin, usan el color de
+acento en vez del color de error.
+
+La ventana se verificó con `bin/audiofiles/02 - Legacy.mp3`: reprodujo el
+archivo, mostró actividad independiente por canal y permaneció responsiva. En
+una observación breve de ocho segundos, el working set se estabilizó alrededor
+de 83 MB y la memoria privada alrededor de 107 MB, sin crecimiento continuo.
+
 ## Skins
 
 El gestor ofrece `PHOSPHOR_GREEN`, `AMBER_CRT` y `CYBER_VIOLET`. Una skin JSON
@@ -104,21 +129,15 @@ puede cambiar:
 La skin se valida, tiene un límite de 256 KiB y se persiste en la carpeta de
 configuración del usuario bajo `playerdoit/skin.json`.
 
-## Próxima revisión recomendada
+## Revisión pendiente
 
-1. Abrir el ejecutable y confirmar el FFT durante reproducción en la pantalla;
-   `PrintWindow` puede devolver una captura blanca mientras Gio presenta con la
-   GPU, por lo que esa API no es una verificación fiable del frame activo.
-2. Revisar visualmente el modal `[ SKINS ]` y la importación de
+1. Revisar visualmente el modal `[ SKINS ]` y la importación de
    `skins/ice-terminal.json`.
-3. Añadir atajos de teclado sólo después de estabilizar el layout: espacio,
+2. Añadir atajos de teclado sólo después de estabilizar el layout: espacio,
    J/K, Enter y Ctrl+O todavía no están implementados en Gio.
-4. Si se necesita medir rendimiento, registrar CPU, memoria privada y memoria
+3. Si se necesita medir rendimiento, registrar CPU, memoria privada y memoria
    GPU durante varios minutos; no comparar únicamente el Working Set del
    proceso Wails, porque WebView2 reparte memoria entre procesos auxiliares.
-5. Considerar dibujar etiquetas abreviadas de frecuencia directamente dentro
-   de `drawSpectrum`. Una fila rígida con las 16 etiquetas llegó a consumir el
-   espacio flexible del gráfico y fue retirada.
 
 ## Restricciones importantes
 

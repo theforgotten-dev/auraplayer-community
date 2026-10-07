@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"gioui.org/app"
@@ -26,10 +29,12 @@ import (
 )
 
 const (
-	windowWidth  = 1280
-	windowHeight = 780
-	minWidth     = 900
-	minHeight    = 620
+	windowWidth   = 1280
+	windowHeight  = 780
+	compactWidth  = 760
+	compactHeight = 460
+	minWidth      = 600
+	minHeight     = 360
 )
 
 type fileResult struct {
@@ -48,16 +53,27 @@ type UI struct {
 	skin    Skin
 	palette Palette
 
-	state       player.Snapshot
-	spectrum    dsp.Spectrum
-	nextPoll    time.Time
-	lastSeek    time.Time
-	message     string
-	showSkins   bool
-	dialogBusy  bool
-	fileResults chan fileResult
+	state         player.Snapshot
+	spectrum      dsp.Spectrum
+	visualLeft    [16]float64
+	visualRight   [16]float64
+	peaksLeft     [16]float64
+	peaksRight    [16]float64
+	peakHoldLeft  [16]int
+	peakHoldRight [16]int
+	levelLeft     float64
+	levelRight    float64
+	lastAnimTime  time.Time
+	nextPoll      time.Time
+	lastSeek      time.Time
+	message       string
+	showSkins     bool
+	dialogBusy    bool
+	compactMode   bool
+	fileResults   chan fileResult
 
 	openButton     widget.Clickable
+	compactButton  widget.Clickable
 	previousButton widget.Clickable
 	stopButton     widget.Clickable
 	toggleButton   widget.Clickable
@@ -100,6 +116,7 @@ func newUI(window *app.Window, initialPaths []string) *UI {
 		queueButtons: make(map[string]*widget.Clickable),
 	}
 	ui.palette = paletteFor(ui.skin)
+	ui.spectrum = dsp.EmptySpectrum()
 	ui.volume.Value = 0.8
 	ui.queueList.Axis = layout.Vertical
 	if len(initialPaths) > 0 {
@@ -136,12 +153,27 @@ func (ui *UI) update(gtx layout.Context) {
 		ui.nextPoll = gtx.Now.Add(200 * time.Millisecond)
 	}
 	if ui.state.State == player.StatePlaying {
-		ui.spectrum = ui.controller.Spectrum()
-		gtx.Execute(op.InvalidateCmd{At: gtx.Now.Add(time.Second / 30)})
+		ui.animateSpectrum(gtx.Now, true)
+		gtx.Execute(op.InvalidateCmd{At: gtx.Now.Add(time.Second / 60)})
+	} else if ui.hasActiveSpectrum() {
+		ui.animateSpectrum(gtx.Now, false)
+		gtx.Execute(op.InvalidateCmd{At: gtx.Now.Add(time.Second / 60)})
 	}
 
 	if ui.openButton.Clicked(gtx) && !ui.dialogBusy {
 		ui.chooseAudio()
+	}
+	if ui.compactButton.Clicked(gtx) {
+		ui.compactMode = !ui.compactMode
+		if ui.compactMode {
+			ui.window.Option(
+				app.Size(unit.Dp(compactWidth), unit.Dp(compactHeight)),
+			)
+		} else {
+			ui.window.Option(
+				app.Size(unit.Dp(windowWidth), unit.Dp(windowHeight)),
+			)
+		}
 	}
 	if ui.previousButton.Clicked(gtx) {
 		ui.runAction(ui.controller.Previous())
@@ -207,71 +239,251 @@ func (ui *UI) layout(gtx layout.Context) layout.Dimensions {
 	)
 }
 
+func (ui *UI) isCompact(gtx layout.Context) bool {
+	return ui.compactMode || gtx.Constraints.Max.X < 920
+}
+
 func (ui *UI) layoutHeader(gtx layout.Context) layout.Dimensions {
-	gtx.Constraints.Min.Y = gtx.Dp(68)
+	compact := ui.isCompact(gtx)
+	headerH := 58
+	if compact {
+		headerH = 46
+	}
+	gtx.Constraints.Min.Y = gtx.Dp(unit.Dp(headerH))
 	return ui.panel(gtx, func(gtx layout.Context) layout.Dimensions {
 		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle, Gap: gtx.Dp(12)}.Layout(gtx,
+				return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle, Gap: gtx.Dp(8)}.Layout(gtx,
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(46), gtx.Dp(38)))
+						iconW, iconH := gtx.Dp(38), gtx.Dp(32)
+						iconText := float32(14)
+						if compact {
+							iconW, iconH = gtx.Dp(32), gtx.Dp(26)
+							iconText = 11
+						}
+						gtx.Constraints = layout.Exact(image.Pt(iconW, iconH))
 						return ui.outlineBox(gtx, ui.palette.Accent, func(gtx layout.Context) layout.Dimensions {
-							return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, ">_", 16, ui.palette.Accent, true) })
+							return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+								return ui.label(gtx, ">_", iconText, ui.palette.Accent, true)
+							})
 						})
 					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						title := "AURA // AMAROK 3.2"
+						eyebrow := "KDE_CLI_EDITION :: OTO_ENGINE"
+						titleSize := float32(16)
+						if compact {
+							title = "AURA // AMAROK"
+							eyebrow = "CLI_EDITION"
+							titleSize = 13
+						}
 						return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								return ui.label(gtx, "PLAYERDOIT::NATIVE_AUDIO_ENGINE", 9, ui.palette.Muted, false)
+								return ui.label(gtx, eyebrow, 7, ui.palette.Muted, false)
 							}),
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								return ui.label(gtx, "AURA_CONSOLE", 19, ui.palette.Accent, true)
+								return ui.label(gtx, title, titleSize, ui.palette.Accent, true)
 							}),
 						)
 					}),
 				)
 			}),
 			layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-				status := "ENGINE_READY"
+				if compact {
+					return layout.Dimensions{}
+				}
+				status := "STANDBY"
 				statusColor := ui.palette.Muted
 				if ui.state.State == player.StatePlaying {
-					status, statusColor = "ENGINE_PLAYING", ui.palette.Accent
+					status, statusColor = "STREAMING (48kHz S16LE)", ui.palette.Accent
+				} else if ui.state.State == player.StatePaused {
+					status, statusColor = "PAUSED", ui.palette.Text
+				} else if ui.state.State == player.StateError {
+					status, statusColor = "ERROR", ui.palette.Danger
 				}
-				if ui.state.State == player.StatePaused {
-					status = "ENGINE_PAUSED"
-				}
-				if ui.state.State == player.StateError {
-					status, statusColor = "ENGINE_ERROR", ui.palette.Danger
-				}
-				return layout.E.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					return ui.label(gtx, "●  "+status, 9, statusColor, false)
+				return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					return ui.label(gtx, "●  ENGINE::"+status, 8, statusColor, true)
 				})
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.button(gtx, &ui.openButton, "[ LOAD MP3 ]", true)
+				modeText := "[ ◰ AMAROK ]"
+				if compact {
+					modeText = "[ ◰ FULL ]"
+				}
+				return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(6)}.Layout(gtx,
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return ui.button(gtx, &ui.compactButton, modeText, false)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return ui.button(gtx, &ui.openButton, "[ + LOAD MP3 ]", true)
+					}),
+				)
 			}),
 		)
 	})
 }
 
 func (ui *UI) layoutWorkspace(gtx layout.Context) layout.Dimensions {
+	if ui.isCompact(gtx) {
+		return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
+			layout.Flexed(0.85, ui.layoutQueue),
+			layout.Flexed(1.4, ui.layoutAmarokContextView),
+		)
+	}
 	return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
-		layout.Flexed(.82, ui.layoutQueue),
-		layout.Flexed(1.55, ui.layoutNowPlaying),
-		layout.Flexed(.82, ui.layoutMetadata),
+		layout.Flexed(.85, ui.layoutQueue),
+		layout.Flexed(1.45, ui.layoutAmarokContextView),
+		layout.Flexed(.85, ui.layoutMetadata),
 	)
 }
 
-func (ui *UI) layoutQueue(gtx layout.Context) layout.Dimensions {
+func (ui *UI) layoutAmarokContextView(gtx layout.Context) layout.Dimensions {
+	return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
+		layout.Rigid(ui.layoutNowPlayingCard),
+		layout.Flexed(1, ui.layoutSpectrum),
+	)
+}
+
+func (ui *UI) layoutNowPlayingCard(gtx layout.Context) layout.Dimensions {
+	track := ui.currentTrack()
+	title := "NO_TRACK_LOADED"
+	codec := "NONE"
+	sampleRate := "—"
+	channels := "—"
+	duration := "—"
+	if track != nil {
+		title = track.Title
+		codec = track.Codec
+		sampleRate = fmt.Sprintf("%.1f kHz", float64(track.SampleRate)/1000)
+		if track.Channels == 2 {
+			channels = "STEREO"
+		} else {
+			channels = "MONO"
+		}
+		duration = formatTime(track.Duration)
+	}
+
 	return ui.panel(gtx, func(gtx layout.Context) layout.Dimensions {
-		return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(8)}.Layout(gtx,
+		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle, Gap: gtx.Dp(10)}.Layout(gtx,
+			// Cybernetic ASCII Cassette/Vinyl Artwork Glyph
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.heading(gtx, "// LOCAL_LIBRARY", fmt.Sprintf("QUEUE  %02d", len(ui.state.Queue)))
+				w, h := gtx.Dp(58), gtx.Dp(48)
+				gtx.Constraints = layout.Exact(image.Pt(w, h))
+				return ui.outlineBox(gtx, ui.palette.LineHot, func(gtx layout.Context) layout.Dimensions {
+					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						glyph := "[●══●]\n|░░░░|\n[AURA]"
+						if ui.state.State == player.StatePlaying {
+							glyph = "[▶══●]\n|████|\n[AMRK]"
+						}
+						return ui.label(gtx, glyph, 8, ui.palette.Accent, true)
+					})
+				})
+			}),
+			// Track Details and Metadata Badges
+			layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+				return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(3)}.Layout(gtx,
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						trackNo := "--"
+						if ui.state.CurrentIndex >= 0 {
+							trackNo = fmt.Sprintf("%02d/%02d", ui.state.CurrentIndex+1, len(ui.state.Queue))
+						}
+						return ui.label(gtx, "// AMAROK_CONTEXT · NOW_PLAYING ["+trackNo+"]", 8, ui.palette.Muted, true)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return ui.singleLine(gtx, title, 13, ui.palette.Text)
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(4)}.Layout(gtx,
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return ui.tagBadge(gtx, codec, ui.palette.PanelRaised, ui.palette.Accent)
+							}),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return ui.tagBadge(gtx, sampleRate, ui.palette.PanelRaised, ui.palette.Text)
+							}),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return ui.tagBadge(gtx, channels, ui.palette.PanelRaised, ui.palette.ChannelRight)
+							}),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return ui.tagBadge(gtx, duration, ui.palette.PanelRaised, ui.palette.Muted)
+							}),
+						)
+					}),
+				)
+			}),
+		)
+	})
+}
+
+func (ui *UI) layoutSpectrum(gtx layout.Context) layout.Dimensions {
+	return ui.outlineBox(gtx, ui.palette.Line, func(gtx layout.Context) layout.Dimensions {
+		return layout.Inset{Top: 8, Right: 10, Bottom: 8, Left: 10}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(5)}.Layout(gtx,
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+						layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+							return ui.label(gtx, "// LIVE_SPECTRUM_ANALYZER · 60_FPS · FFT_2048", 8, ui.palette.Muted, true)
+						}),
+						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+							return ui.label(gtx, "● CH_L   ● CH_R", 8, ui.palette.Accent, true)
+						}),
+					)
+				}),
+				layout.Flexed(1, ui.drawSpectrum),
+				layout.Rigid(ui.layoutFrequencyScale),
+				layout.Rigid(ui.layoutChannelLevels),
+			)
+		})
+	})
+}
+
+func (ui *UI) layoutFrequencyScale(gtx layout.Context) layout.Dimensions {
+	return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "40Hz", 7, ui.palette.Muted, false) }),
+		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+			return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "250Hz", 7, ui.palette.Muted, false) })
+		}),
+		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+			return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "1kHz", 7, ui.palette.Muted, false) })
+		}),
+		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+			return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "4kHz", 7, ui.palette.Muted, false) })
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "20kHz", 7, ui.palette.Muted, false) }),
+	)
+}
+
+func (ui *UI) tagBadge(gtx layout.Context, value string, background, foreground color.NRGBA) layout.Dimensions {
+	return ui.rowBox(gtx, background, ui.palette.Line, func(gtx layout.Context) layout.Dimensions {
+		return layout.Inset{Top: 2, Right: 6, Bottom: 2, Left: 6}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			return ui.label(gtx, value, 8, foreground, true)
+		})
+	})
+}
+
+func (ui *UI) layoutQueue(gtx layout.Context) layout.Dimensions {
+	totalDuration := 0.0
+	for _, track := range ui.state.Queue {
+		totalDuration += track.Duration
+	}
+	return ui.panel(gtx, func(gtx layout.Context) layout.Dimensions {
+		return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(6)}.Layout(gtx,
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+					layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+						return ui.heading(gtx, "// AMAROK_COLLECTION", fmt.Sprintf("QUEUE [%02d]", len(ui.state.Queue)))
+					}),
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						if len(ui.state.Queue) == 0 {
+							return layout.Dimensions{}
+						}
+						return ui.tagBadge(gtx, formatTime(totalDuration), ui.palette.PanelRaised, ui.palette.Muted)
+					}),
+				)
 			}),
 			layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 				if len(ui.state.Queue) == 0 {
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						return ui.label(gtx, "[ ]\n\nQUEUE_EMPTY\nLOAD ONE OR MORE MP3 FILES", 10, ui.palette.Muted, false)
+						return ui.label(gtx, "[ ]\n\nQUEUE_EMPTY\nUSE [ + LOAD MP3 ]\nOR DRAG FILES", 9, ui.palette.Muted, false)
 					})
 				}
 				return material.List(ui.theme, &ui.queueList).Layout(gtx, len(ui.state.Queue), func(gtx layout.Context, index int) layout.Dimensions {
@@ -280,19 +492,23 @@ func (ui *UI) layoutQueue(gtx layout.Context) layout.Dimensions {
 					return button.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 						active := index == ui.state.CurrentIndex
 						background, border, foreground := ui.palette.Panel, ui.palette.Line, ui.palette.Muted
+						bullet := fmt.Sprintf("░%02d", index+1)
 						if active {
 							background, border, foreground = ui.palette.PanelRaised, ui.palette.Accent, ui.palette.Accent
+							bullet = fmt.Sprintf("▶%02d", index+1)
 						}
 						return ui.rowBox(gtx, background, border, func(gtx layout.Context) layout.Dimensions {
 							return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-									return ui.label(gtx, fmt.Sprintf(">%02d", index+1), 9, foreground, false)
+									return ui.label(gtx, bullet, 9, foreground, true)
 								}),
 								layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-									return layout.Inset{Left: 10}.Layout(gtx, func(gtx layout.Context) layout.Dimensions { return ui.singleLine(gtx, track.Title, 10, foreground) })
+									return layout.Inset{Left: 8}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+										return ui.singleLine(gtx, track.Title, 10, foreground)
+									})
 								}),
 								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-									return ui.label(gtx, formatTime(track.Duration), 9, ui.palette.Muted, false)
+									return ui.label(gtx, formatTime(track.Duration), 8, ui.palette.Muted, false)
 								}),
 							)
 						})
@@ -301,47 +517,100 @@ func (ui *UI) layoutQueue(gtx layout.Context) layout.Dimensions {
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					return ui.label(gtx, "J/K SELECT  ·  ENTER PLAY", 8, ui.palette.Muted, false)
+					return ui.label(gtx, "▲/▼ J/K SELECT · [ENTER] PLAY", 7, ui.palette.Muted, false)
 				})
 			}),
 		)
 	})
 }
 
-func (ui *UI) layoutNowPlaying(gtx layout.Context) layout.Dimensions {
-	track := ui.currentTrack()
-	title := "NO_TRACK_SELECTED"
-	if track != nil {
-		title = track.Title
+func (ui *UI) animateSpectrum(now time.Time, playing bool) {
+	var raw dsp.Spectrum
+	if playing {
+		raw = ui.controller.Spectrum()
 	}
-	return ui.panel(gtx, func(gtx layout.Context) layout.Dimensions {
-		return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(9)}.Layout(gtx,
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.heading(gtx, "// NOW_PLAYING", title) }),
-			layout.Flexed(1, ui.layoutSpectrum),
-			layout.Rigid(ui.layoutTimeline),
-		)
-	})
+
+	dt := 1.0 / 60.0
+	if !ui.lastAnimTime.IsZero() {
+		elapsed := now.Sub(ui.lastAnimTime).Seconds()
+		if elapsed > 0 && elapsed < 0.2 {
+			dt = elapsed
+		}
+	}
+	ui.lastAnimTime = now
+
+	// Winamp-style visual ballistics:
+	// Bars fall quickly and smoothly: ~1.8 units/s (100% to 0% in ~550ms)
+	barDecay := 1.8 * dt
+	// Peak caps hold then fall slower: ~0.8 units/s (100% to 0% in ~1250ms)
+	peakDecay := 0.8 * dt
+	// VU level meters decay: ~2.2 units/s
+	levelDecay := 2.2 * dt
+
+	for i := 0; i < 16; i++ {
+		// Left channel
+		targetL := raw.Left[i]
+		if targetL > ui.visualLeft[i] {
+			ui.visualLeft[i] = targetL // Instant attack
+		} else {
+			ui.visualLeft[i] = math.Max(0, ui.visualLeft[i]-barDecay)
+		}
+		if ui.visualLeft[i] >= ui.peaksLeft[i] {
+			ui.peaksLeft[i] = ui.visualLeft[i]
+			ui.peakHoldLeft[i] = 16 // hold for ~260ms at 60 FPS
+		} else if ui.peakHoldLeft[i] > 0 {
+			ui.peakHoldLeft[i]--
+		} else {
+			ui.peaksLeft[i] = math.Max(0, ui.peaksLeft[i]-peakDecay)
+		}
+
+		// Right channel
+		targetR := raw.Right[i]
+		if targetR > ui.visualRight[i] {
+			ui.visualRight[i] = targetR // Instant attack
+		} else {
+			ui.visualRight[i] = math.Max(0, ui.visualRight[i]-barDecay)
+		}
+		if ui.visualRight[i] >= ui.peaksRight[i] {
+			ui.peaksRight[i] = ui.visualRight[i]
+			ui.peakHoldRight[i] = 16
+		} else if ui.peakHoldRight[i] > 0 {
+			ui.peakHoldRight[i]--
+		} else {
+			ui.peaksRight[i] = math.Max(0, ui.peaksRight[i]-peakDecay)
+		}
+	}
+
+	// Channel VU levels
+	if raw.LeftLevel > ui.levelLeft {
+		ui.levelLeft = raw.LeftLevel
+	} else {
+		ui.levelLeft = math.Max(0, ui.levelLeft-levelDecay)
+	}
+
+	if raw.RightLevel > ui.levelRight {
+		ui.levelRight = raw.RightLevel
+	} else {
+		ui.levelRight = math.Max(0, ui.levelRight-levelDecay)
+	}
+
+	ui.spectrum.Left = ui.visualLeft
+	ui.spectrum.Right = ui.visualRight
+	ui.spectrum.LeftLevel = ui.levelLeft
+	ui.spectrum.RightLevel = ui.levelRight
 }
 
-func (ui *UI) layoutSpectrum(gtx layout.Context) layout.Dimensions {
-	return ui.outlineBox(gtx, ui.palette.Line, func(gtx layout.Context) layout.Dimensions {
-		return layout.Inset{Top: 10, Right: 10, Bottom: 8, Left: 10}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-			return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(6)}.Layout(gtx,
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-						layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-							return ui.label(gtx, "FFT_2048 :: 40HZ—20KHZ", 8, ui.palette.Muted, false)
-						}),
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							return ui.label(gtx, "● CH_L   ● CH_R", 8, ui.palette.Text, false)
-						}),
-					)
-				}),
-				layout.Flexed(1, ui.drawSpectrum),
-				layout.Rigid(ui.layoutChannelLevels),
-			)
-		})
-	})
+func (ui *UI) hasActiveSpectrum() bool {
+	if ui.levelLeft > 0.002 || ui.levelRight > 0.002 {
+		return true
+	}
+	for i := 0; i < 16; i++ {
+		if ui.visualLeft[i] > 0.002 || ui.visualRight[i] > 0.002 ||
+			ui.peaksLeft[i] > 0.002 || ui.peaksRight[i] > 0.002 {
+			return true
+		}
+	}
+	return false
 }
 
 func (ui *UI) drawSpectrum(gtx layout.Context) layout.Dimensions {
@@ -349,7 +618,11 @@ func (ui *UI) drawSpectrum(gtx layout.Context) layout.Dimensions {
 	if size.X <= 0 || size.Y <= 0 {
 		return layout.Dimensions{}
 	}
-	visualHeight := min(gtx.Dp(180), size.Y)
+	maxH := 180
+	if ui.isCompact(gtx) {
+		maxH = 120
+	}
+	visualHeight := min(gtx.Dp(unit.Dp(maxH)), size.Y)
 	visualTop := (size.Y - visualHeight) / 2
 	for row := 1; row < 4; row++ {
 		y := visualTop + visualHeight*row/4
@@ -361,12 +634,29 @@ func (ui *UI) drawSpectrum(gtx layout.Context) layout.Dimensions {
 	barWidth := max(1, (bandWidth-barGap)/2)
 	graphHeight := max(1, visualHeight)
 	graphBottom := visualTop + graphHeight
+	peakCapHeight := max(1, gtx.Dp(2))
+
 	for index := 0; index < 16; index++ {
 		x := index * (bandWidth + gap)
-		leftHeight := int(float64(graphHeight) * ui.spectrum.Left[index])
-		rightHeight := int(float64(graphHeight) * ui.spectrum.Right[index])
-		fillSegmentedBar(gtx.Ops, image.Rect(x, graphBottom-leftHeight, x+barWidth, graphBottom), ui.palette.ChannelLeft, ui.palette.Background)
-		fillSegmentedBar(gtx.Ops, image.Rect(x+barWidth+barGap, graphBottom-rightHeight, x+barWidth*2+barGap, graphBottom), ui.palette.ChannelRight, ui.palette.Background)
+		leftHeight := int(float64(graphHeight) * ui.visualLeft[index])
+		rightHeight := int(float64(graphHeight) * ui.visualRight[index])
+
+		// Left bar
+		fillSegmentedBar(gtx.Ops, image.Rect(x, graphBottom-leftHeight, x+barWidth, graphBottom), ui.palette.ChannelLeft, ui.palette.Background, graphBottom)
+		// Left peak cap
+		if peakL := ui.peaksLeft[index]; peakL > 0.01 {
+			peakY := graphBottom - int(float64(graphHeight)*peakL)
+			fillRect(gtx.Ops, image.Rect(x, max(visualTop, peakY-peakCapHeight), x+barWidth, max(visualTop+peakCapHeight, peakY)), ui.palette.LineHot)
+		}
+
+		// Right bar
+		xRight := x + barWidth + barGap
+		fillSegmentedBar(gtx.Ops, image.Rect(xRight, graphBottom-rightHeight, xRight+barWidth, graphBottom), ui.palette.ChannelRight, ui.palette.Background, graphBottom)
+		// Right peak cap
+		if peakR := ui.peaksRight[index]; peakR > 0.01 {
+			peakY := graphBottom - int(float64(graphHeight)*peakR)
+			fillRect(gtx.Ops, image.Rect(xRight, max(visualTop, peakY-peakCapHeight), xRight+barWidth, max(visualTop+peakCapHeight, peakY)), ui.palette.LineHot)
+		}
 	}
 	return layout.Dimensions{Size: size}
 }
@@ -375,11 +665,11 @@ func (ui *UI) layoutChannelLevels(gtx layout.Context) layout.Dimensions {
 	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle, Gap: gtx.Dp(5)}.Layout(gtx,
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "L", 8, ui.palette.Muted, false) }),
 		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-			return ui.levelBar(gtx, ui.spectrum.LeftLevel, ui.palette.ChannelLeft)
+			return ui.levelBar(gtx, ui.levelLeft, ui.palette.ChannelLeft)
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "R", 8, ui.palette.Muted, false) }),
 		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-			return ui.levelBar(gtx, ui.spectrum.RightLevel, ui.palette.ChannelRight)
+			return ui.levelBar(gtx, ui.levelRight, ui.palette.ChannelRight)
 		}),
 	)
 }
@@ -393,11 +683,11 @@ func (ui *UI) layoutTimeline(gtx layout.Context) layout.Dimensions {
 		ui.seek.Value = float32(ui.state.Position / duration)
 	}
 	before := ui.seek.Value
-	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+	return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(2)}.Layout(gtx,
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			slider := material.Slider(ui.theme, &ui.seek)
 			slider.Color = ui.palette.Accent
-			slider.FingerSize = 24
+			slider.FingerSize = 18
 			dimensions := slider.Layout(gtx)
 			if ui.seek.Value != before && duration > 0 && (gtx.Now.Sub(ui.lastSeek) >= 80*time.Millisecond || !ui.seek.Dragging()) {
 				ui.lastSeek = gtx.Now
@@ -406,15 +696,16 @@ func (ui *UI) layoutTimeline(gtx layout.Context) layout.Dimensions {
 			return dimensions
 		}),
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			remaining := formatRemaining(ui.state.Position, duration)
 			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return ui.label(gtx, "T+"+formatTime(ui.state.Position), 8, ui.palette.Muted, false)
+					return ui.label(gtx, "T+ "+formatTime(ui.state.Position), 8, ui.palette.Accent, true)
 				}),
 				layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 					return layout.Dimensions{Size: image.Pt(gtx.Constraints.Max.X, 0)}
 				}),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return ui.label(gtx, "T+"+formatTime(duration), 8, ui.palette.Muted, false)
+					return ui.label(gtx, "T "+remaining+" / "+formatTime(duration), 8, ui.palette.Muted, false)
 				}),
 			)
 		}),
@@ -424,38 +715,42 @@ func (ui *UI) layoutTimeline(gtx layout.Context) layout.Dimensions {
 func (ui *UI) layoutMetadata(gtx layout.Context) layout.Dimensions {
 	track := ui.currentTrack()
 	return ui.panel(gtx, func(gtx layout.Context) layout.Dimensions {
-		return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(7)}.Layout(gtx,
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.heading(gtx, "// SIGNAL_INSPECTOR", "METADATA") }),
+		return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(6)}.Layout(gtx,
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.metadataRow(gtx, "TÍTULO", trackValue(track, func(t player.Track) string { return t.Title }))
+				return ui.heading(gtx, "// CONTEXT_INSPECTOR", "ENGINE_SPECS")
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.metadataRow(gtx, "CODEC", trackValue(track, func(t player.Track) string { return t.Codec }))
+				return ui.metadataRow(gtx, "CODEC_DECODER", trackValue(track, func(t player.Track) string { return t.Codec + " (go-mp3 stream)" }))
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.metadataRow(gtx, "FRECUENCIA", trackValue(track, func(t player.Track) string { return fmt.Sprintf("%.1f kHz", float64(t.SampleRate)/1000) }))
+				return ui.metadataRow(gtx, "SRC_SAMPLE_RATE", trackValue(track, func(t player.Track) string { return fmt.Sprintf("%.1f kHz → 48.0 kHz", float64(t.SampleRate)/1000) }))
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.metadataRow(gtx, "CANALES", trackValue(track, func(t player.Track) string {
+				return ui.metadataRow(gtx, "CHANNELS_OUTPUT", trackValue(track, func(t player.Track) string {
 					if t.Channels == 2 {
-						return "ESTÉREO"
+						return "2 (STEREO S16LE)"
 					}
-					return "MONO"
+					return "1 (MONO S16LE)"
 				}))
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.metadataRow(gtx, "RUTA", trackValue(track, func(t player.Track) string { return t.Path }))
+				return ui.metadataRow(gtx, "DEVICE_BACKEND", "OTO v3 (WASAPI)")
 			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				return ui.rowBox(gtx, ui.palette.PanelRaised, ui.palette.Line, func(gtx layout.Context) layout.Dimensions {
-					return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							return ui.label(gtx, "OUTPUT_PIPELINE", 8, ui.palette.ChannelRight, true)
-						}),
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							return ui.label(gtx, "MP3 → PCM S16LE → SRC 48 kHz → FFT → Oto v3", 8, ui.palette.Accent, false)
-						}),
-					)
+				return ui.metadataRow(gtx, "FILE_SOURCE", trackValue(track, func(t player.Track) string { return filepath.Base(t.Path) }))
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				return ui.rowBox(gtx, ui.palette.PanelRaised, ui.palette.LineHot, func(gtx layout.Context) layout.Dimensions {
+					return layout.UniformInset(6).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(2)}.Layout(gtx,
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return ui.label(gtx, "SIGNAL_PIPELINE", 8, ui.palette.Accent, true)
+							}),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return ui.label(gtx, "MP3 → PCM → SRC 48k → FFT → Oto", 7, ui.palette.Text, false)
+							}),
+						)
+					})
 				})
 			}),
 		)
@@ -463,56 +758,86 @@ func (ui *UI) layoutMetadata(gtx layout.Context) layout.Dimensions {
 }
 
 func (ui *UI) layoutTransport(gtx layout.Context) layout.Dimensions {
-	gtx.Constraints.Min.Y = gtx.Dp(64)
+	compact := ui.isCompact(gtx)
+	volW := 130
+	if compact {
+		volW = 85
+	}
 	return ui.panel(gtx, func(gtx layout.Context) layout.Dimensions {
-		return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-			layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-				return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(6)}.Layout(gtx,
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.skinsButton, "[ SKINS ]", false) }),
+		return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(4)}.Layout(gtx,
+			layout.Rigid(ui.layoutTimeline),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+					layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+						return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle, Gap: gtx.Dp(6)}.Layout(gtx,
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return ui.button(gtx, &ui.skinsButton, "[ 🎨 SKINS ]", false)
+							}),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								if ui.message == "" {
+									status := "READY"
+									if ui.state.State == player.StatePlaying {
+										status = "PLAYING"
+									} else if ui.state.State == player.StatePaused {
+										status = "PAUSED"
+									}
+									return ui.label(gtx, ":: "+status, 8, ui.palette.Muted, false)
+								}
+								messageColor := ui.palette.Accent
+								if strings.HasPrefix(ui.message, "ERR::") {
+									messageColor = ui.palette.Danger
+								}
+								return ui.label(gtx, ui.message, 8, messageColor, false)
+							}),
+						)
+					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						if ui.message == "" {
-							return layout.Dimensions{}
+						toggle := "[ ▶ PLAY ]"
+						if ui.state.State == player.StatePlaying {
+							toggle = "[ ⏸ PAUSE ]"
 						}
-						return ui.label(gtx, "  "+ui.message, 8, ui.palette.Danger, false)
+						return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(6)}.Layout(gtx,
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.previousButton, "|<<", false) }),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.stopButton, "[■]", false) }),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.toggleButton, toggle, true) }),
+							layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.nextButton, ">>|", false) }),
+						)
+					}),
+					layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+						return layout.E.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+							return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle, Gap: gtx.Dp(4)}.Layout(gtx,
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "VOL", 8, ui.palette.Muted, true) }),
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(unit.Dp(volW)), gtx.Dp(24)))
+									before := ui.volume.Value
+									slider := material.Slider(ui.theme, &ui.volume)
+									slider.Color = ui.palette.Accent
+									slider.FingerSize = 18
+									dimensions := slider.Layout(gtx)
+									if before != ui.volume.Value {
+										ui.runAction(ui.controller.SetVolume(float64(ui.volume.Value)))
+									}
+									return dimensions
+								}),
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									return ui.label(gtx, fmt.Sprintf("%3.0f%%", ui.volume.Value*100), 8, ui.palette.Accent, true)
+								}),
+							)
+						})
 					}),
 				)
 			}),
-			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-				toggle := "PLAY"
-				if ui.state.State == player.StatePlaying {
-					toggle = "PAUSE"
-				}
-				return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(6)}.Layout(gtx,
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.previousButton, "|<", false) }),
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.stopButton, "[■]", false) }),
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.toggleButton, toggle, true) }),
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.button(gtx, &ui.nextButton, ">|", false) }),
-				)
-			}),
-			layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-				return layout.E.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-					return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, "VOL", 8, ui.palette.Muted, true) }),
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							gtx.Constraints = layout.Exact(image.Pt(gtx.Dp(150), gtx.Dp(28)))
-							before := ui.volume.Value
-							slider := material.Slider(ui.theme, &ui.volume)
-							slider.Color = ui.palette.Accent
-							slider.FingerSize = 24
-							dimensions := slider.Layout(gtx)
-							if before != ui.volume.Value {
-								ui.runAction(ui.controller.SetVolume(float64(ui.volume.Value)))
-							}
-							return dimensions
-						}),
-						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-							return ui.label(gtx, fmt.Sprintf("%3.0f%%", ui.volume.Value*100), 8, ui.palette.Accent, true)
-						}),
-					)
-				})
-			}),
 		)
 	})
+}
+
+func formatRemaining(current, duration float64) string {
+	rem := duration - current
+	if rem < 0 {
+		rem = 0
+	}
+	total := int(rem)
+	return fmt.Sprintf("-%d:%02d", total/60, total%60)
 }
 
 func (ui *UI) layoutSkinManager(gtx layout.Context) layout.Dimensions {
@@ -696,13 +1021,19 @@ func (ui *UI) outlineBox(gtx layout.Context, border color.NRGBA, body layout.Wid
 }
 
 func (ui *UI) rowBox(gtx layout.Context, background, border color.NRGBA, body layout.Widget) layout.Dimensions {
-	return layout.Stack{}.Layout(gtx,
-		layout.Expanded(func(gtx layout.Context) layout.Dimensions {
-			fillRect(gtx.Ops, image.Rectangle{Max: gtx.Constraints.Max}, background)
-			return layout.Dimensions{Size: gtx.Constraints.Max}
-		}),
-		layout.Stacked(func(gtx layout.Context) layout.Dimensions { return layout.UniformInset(9).Layout(gtx, body) }),
-	)
+	content := op.Record(gtx.Ops)
+	dimensions := layout.UniformInset(9).Layout(gtx, body)
+	contentCall := content.Stop()
+
+	rectangle := image.Rectangle{Max: dimensions.Size}
+	fillRect(gtx.Ops, rectangle, background)
+	stroke := max(1, int(ui.skin.Metrics.StrokeWidth))
+	fillRect(gtx.Ops, image.Rect(0, 0, dimensions.Size.X, stroke), border)
+	fillRect(gtx.Ops, image.Rect(0, dimensions.Size.Y-stroke, dimensions.Size.X, dimensions.Size.Y), border)
+	fillRect(gtx.Ops, image.Rect(0, 0, stroke, dimensions.Size.Y), border)
+	fillRect(gtx.Ops, image.Rect(dimensions.Size.X-stroke, 0, dimensions.Size.X, dimensions.Size.Y), border)
+	contentCall.Add(gtx.Ops)
+	return dimensions
 }
 
 func (ui *UI) heading(gtx layout.Context, eyebrow, title string) layout.Dimensions {
@@ -775,13 +1106,16 @@ func fillRect(ops *op.Ops, rectangle image.Rectangle, fill color.NRGBA) {
 	paint.FillShape(ops, fill, clip.Rect(rectangle).Op())
 }
 
-func fillSegmentedBar(ops *op.Ops, rectangle image.Rectangle, fill, mask color.NRGBA) {
+func fillSegmentedBar(ops *op.Ops, rectangle image.Rectangle, fill, mask color.NRGBA, anchorY int) {
 	if rectangle.Empty() {
 		return
 	}
 	fillRect(ops, rectangle, fill)
-	for y := rectangle.Min.Y + 7; y < rectangle.Max.Y; y += 9 {
-		fillRect(ops, image.Rect(rectangle.Min.X, y, rectangle.Max.X, min(y+2, rectangle.Max.Y)), mask)
+	segStep := 8
+	gapHeight := 2
+	for y := anchorY - segStep; y > rectangle.Min.Y; y -= segStep {
+		gapTop := max(rectangle.Min.Y, y-gapHeight)
+		fillRect(ops, image.Rect(rectangle.Min.X, gapTop, rectangle.Max.X, y), mask)
 	}
 }
 

@@ -15,6 +15,7 @@ import (
 
 const (
 	fftSize   = 2048
+	hopSize   = 512
 	minDB     = -72.0
 	frameSize = 4
 	bandCount = 16
@@ -43,15 +44,20 @@ type Analyzer struct {
 	sourceMu sync.Mutex
 	mu       sync.RWMutex
 
-	fft          *fourier.FFT
-	window       []float64
-	leftSamples  []float64
-	rightSamples []float64
-	leftCoeffs   []complex128
-	rightCoeffs  []complex128
-	windowIndex  int
-	carry        []byte
-	spectrum     Spectrum
+	fft               *fourier.FFT
+	window            []float64
+	scale             float64
+	sampleBufferLeft  []float64
+	sampleBufferRight []float64
+	leftSamples       []float64
+	rightSamples      []float64
+	leftCoeffs        []complex128
+	rightCoeffs       []complex128
+	writeIndex        int
+	samplesSinceFFT   int
+	totalSamples      int
+	carry             []byte
+	spectrum          Spectrum
 }
 
 // NewAnalyzer wraps stereo signed 16-bit little-endian PCM.
@@ -67,20 +73,26 @@ func NewAnalyzer(source io.ReadSeeker, config audio.Config) (*Analyzer, error) {
 	}
 
 	analyzer := &Analyzer{
-		source:       source,
-		config:       config,
-		fft:          fourier.NewFFT(fftSize),
-		window:       make([]float64, fftSize),
-		leftSamples:  make([]float64, fftSize),
-		rightSamples: make([]float64, fftSize),
-		leftCoeffs:   make([]complex128, fftSize/2+1),
-		rightCoeffs:  make([]complex128, fftSize/2+1),
-		spectrum:     EmptySpectrum(),
-		carry:        make([]byte, 0, frameSize-1),
+		source:            source,
+		config:            config,
+		fft:               fourier.NewFFT(fftSize),
+		window:            make([]float64, fftSize),
+		sampleBufferLeft:  make([]float64, fftSize),
+		sampleBufferRight: make([]float64, fftSize),
+		leftSamples:       make([]float64, fftSize),
+		rightSamples:      make([]float64, fftSize),
+		leftCoeffs:        make([]complex128, fftSize/2+1),
+		rightCoeffs:       make([]complex128, fftSize/2+1),
+		spectrum:          EmptySpectrum(),
+		carry:             make([]byte, 0, frameSize-1),
 	}
+	windowSum := 0.0
 	for i := range analyzer.window {
-		analyzer.window[i] = 0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/float64(fftSize-1))
+		factor := 0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/float64(fftSize-1))
+		analyzer.window[i] = factor
+		windowSum += factor
 	}
+	analyzer.scale = 2 / windowSum
 	return analyzer, nil
 }
 
@@ -147,24 +159,30 @@ func (a *Analyzer) consume(data []byte) {
 }
 
 func (a *Analyzer) consumeFrame(frame []byte) {
-	a.leftSamples[a.windowIndex] = float64(int16(binary.LittleEndian.Uint16(frame[0:2]))) / 32768
-	a.rightSamples[a.windowIndex] = float64(int16(binary.LittleEndian.Uint16(frame[2:4]))) / 32768
-	a.windowIndex++
-	if a.windowIndex == fftSize {
+	left := float64(int16(binary.LittleEndian.Uint16(frame[0:2]))) / 32768
+	right := float64(int16(binary.LittleEndian.Uint16(frame[2:4]))) / 32768
+
+	a.sampleBufferLeft[a.writeIndex] = left
+	a.sampleBufferRight[a.writeIndex] = right
+	a.writeIndex = (a.writeIndex + 1) % fftSize
+	a.samplesSinceFFT++
+	a.totalSamples++
+
+	if a.totalSamples >= fftSize && a.samplesSinceFFT >= hopSize {
 		a.calculate()
-		a.windowIndex = 0
+		a.samplesSinceFFT = 0
 	}
 }
 
 func (a *Analyzer) calculate() {
 	leftRMS, rightRMS := 0.0, 0.0
-	windowSum := 0.0
-	for index, factor := range a.window {
-		left := a.leftSamples[index]
-		right := a.rightSamples[index]
+	for index := 0; index < fftSize; index++ {
+		bufferIdx := (a.writeIndex + index) % fftSize
+		left := a.sampleBufferLeft[bufferIdx]
+		right := a.sampleBufferRight[bufferIdx]
 		leftRMS += left * left
 		rightRMS += right * right
-		windowSum += factor
+		factor := a.window[index]
 		a.leftSamples[index] = left * factor
 		a.rightSamples[index] = right * factor
 	}
@@ -172,7 +190,7 @@ func (a *Analyzer) calculate() {
 	a.rightCoeffs = a.fft.Coefficients(a.rightCoeffs, a.rightSamples)
 
 	binWidth := float64(a.config.SampleRate) / fftSize
-	scale := 2 / windowSum
+	scale := a.scale
 	for band := range a.spectrum.Left {
 		first := max(1, int(math.Ceil(bandEdges[band]/binWidth)))
 		last := min(len(a.leftCoeffs)-1, int(math.Floor(bandEdges[band+1]/binWidth)))
@@ -192,9 +210,13 @@ func (a *Analyzer) calculate() {
 }
 
 func (a *Analyzer) reset() {
+	clear(a.sampleBufferLeft)
+	clear(a.sampleBufferRight)
 	clear(a.leftSamples)
 	clear(a.rightSamples)
-	a.windowIndex = 0
+	a.writeIndex = 0
+	a.samplesSinceFFT = 0
+	a.totalSamples = 0
 	a.carry = a.carry[:0]
 	a.spectrum = EmptySpectrum()
 }
@@ -209,9 +231,9 @@ func normalizeDB(amplitude float64) float64 {
 
 func smooth(previous, current float64) float64 {
 	if current > previous {
-		return previous*0.25 + current*0.75
+		return previous*0.10 + current*0.90
 	}
-	return previous*0.82 + current*0.18
+	return previous*0.80 + current*0.20
 }
 
 func cmplxAbs(value complex128) float64 {
