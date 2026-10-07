@@ -4,6 +4,7 @@ package player
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,6 +53,7 @@ type Controller struct {
 	engine       audio.Engine
 	player       audio.Player
 	analyzer     *dsp.Analyzer
+	decoderTask  io.Closer
 	source       *os.File
 	queue        []Track
 	currentIndex int
@@ -274,31 +276,33 @@ func (c *Controller) loadLocked(index int) error {
 	if err != nil {
 		return errors.Join(err, file.Close())
 	}
+	decoderTask, _ := stream.PCM.(io.Closer)
 
 	outputConfig := pipeline.OutputConfig()
 	normalized, err := pipeline.Normalize(stream.PCM, stream.Config, outputConfig)
 	if err != nil {
-		return errors.Join(err, file.Close())
+		return errors.Join(err, closeResource(decoderTask), file.Close())
 	}
 	analyzer, err := dsp.NewAnalyzer(normalized, outputConfig)
 	if err != nil {
-		return errors.Join(err, file.Close())
+		return errors.Join(err, closeResource(decoderTask), file.Close())
 	}
 
 	if c.engine == nil {
 		engine, err := otoengine.New(outputConfig)
 		if err != nil {
-			return errors.Join(err, file.Close())
+			return errors.Join(err, closeResource(decoderTask), file.Close())
 		}
 		c.engine = engine
 	}
 
 	pcmPlayer := c.engine.NewPlayer(analyzer)
 	if err := pcmPlayer.SetVolume(c.volume); err != nil {
-		return errors.Join(err, pcmPlayer.Close(), file.Close())
+		return errors.Join(err, pcmPlayer.Close(), closeResource(decoderTask), file.Close())
 	}
 	c.player = pcmPlayer
 	c.analyzer = analyzer
+	c.decoderTask = decoderTask
 	c.source = file
 	c.currentIndex = index
 	c.position = 0
@@ -312,6 +316,12 @@ func (c *Controller) closeCurrentLocked() error {
 		c.player = nil
 	}
 	c.analyzer = nil
+	if c.decoderTask != nil {
+		if err := c.decoderTask.Close(); closeErr == nil {
+			closeErr = err
+		}
+		c.decoderTask = nil
+	}
 	if c.source != nil {
 		if err := c.source.Close(); closeErr == nil {
 			closeErr = err
@@ -373,6 +383,9 @@ func inspectTrack(path string) (Track, error) {
 	if err != nil {
 		return Track{}, err
 	}
+	if decoderTask, ok := stream.PCM.(io.Closer); ok {
+		defer decoderTask.Close()
+	}
 	title := strings.TrimSuffix(filepath.Base(absPath), filepath.Ext(absPath))
 	return Track{
 		ID:         absPath,
@@ -383,4 +396,11 @@ func inspectTrack(path string) (Track, error) {
 		SampleRate: stream.Config.SampleRate,
 		Channels:   stream.Config.ChannelCount,
 	}, nil
+}
+
+func closeResource(resource io.Closer) error {
+	if resource == nil {
+		return nil
+	}
+	return resource.Close()
 }

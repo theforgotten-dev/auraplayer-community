@@ -52,6 +52,9 @@ func run() error {
 			return err
 		}
 		pcm = stream.PCM
+		if decoderTask, ok := stream.PCM.(io.Closer); ok {
+			defer decoderTask.Close()
+		}
 		config = stream.Config
 	case ".pcm", ".raw":
 		format, err := parseFormat(formatName)

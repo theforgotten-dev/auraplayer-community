@@ -12,7 +12,14 @@ import (
 
 type mp3Decoder struct{}
 
-func (mp3Decoder) Decode(source io.Reader) (Stream, error) {
+func (mp3Decoder) Decode(source io.Reader) (stream Stream, err error) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			stream = Stream{}
+			err = fmt.Errorf("initialize MP3 decoder: panic: %v", recovered)
+		}
+	}()
+
 	decoded, err := gomp3.NewDecoder(source)
 	if err != nil {
 		return Stream{}, fmt.Errorf("decode MP3: %w", err)
@@ -25,7 +32,7 @@ func (mp3Decoder) Decode(source io.Reader) (Stream, error) {
 	}
 
 	return Stream{
-		PCM:      decoded,
+		PCM:      newPCMTask(decoded),
 		Config:   config,
 		Duration: pcmDuration(decoded.Length(), config.SampleRate, 4),
 	}, nil
