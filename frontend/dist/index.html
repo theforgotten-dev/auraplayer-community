@@ -14,18 +14,18 @@
   <main class="app-shell">
     <header class="topbar">
       <div class="brand-lockup">
-        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div class="brand-mark" aria-hidden="true">&gt;_</div>
         <div>
-          <p class="eyebrow">PLAYERDOIT AUDIO ENGINE</p>
-          <h1>Aura</h1>
+          <p class="eyebrow">PLAYERDOIT::AUDIO_ENGINE</p>
+          <h1>AURA_CONSOLE</h1>
         </div>
       </div>
       <div class="engine-status" aria-live="polite">
         <span id="status-dot" class="status-dot"></span>
-        <span id="engine-label">Motor listo</span>
+        <span id="engine-label">ENGINE_READY</span>
       </div>
       <button id="open-files" class="button button-primary" type="button">
-        <span aria-hidden="true">＋</span> Agregar música
+        [ LOAD MP3 ]
       </button>
     </header>
 
@@ -33,34 +33,37 @@
       <aside class="panel playlist-panel" data-panel="playlist">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">BIBLIOTECA LOCAL</p>
-            <h2>Cola <span id="queue-count" class="count">0</span></h2>
+            <p class="eyebrow">// LOCAL_LIBRARY</p>
+            <h2>QUEUE <span id="queue-count" class="count">00</span></h2>
           </div>
-          <button class="icon-button panel-toggle" data-target="playlist" aria-label="Ocultar cola">−</button>
+          <button class="icon-button panel-toggle" data-target="playlist" aria-label="Ocultar cola">[_]</button>
         </div>
         <div id="queue" class="queue" role="listbox" aria-label="Cola de reproducción">
           <div class="empty-state">
-            <div class="empty-icon" aria-hidden="true">♫</div>
-            <strong>Tu cola está vacía</strong>
-            <span>Agrega uno o varios archivos MP3.</span>
+            <div class="empty-icon" aria-hidden="true">[ ]</div>
+            <strong>QUEUE_EMPTY</strong>
+            <span>LOAD ONE OR MORE MP3 FILES</span>
           </div>
         </div>
-        <p class="shortcut-hint"><kbd>j</kbd><kbd>k</kbd> navegar · <kbd>Enter</kbd> reproducir</p>
+        <p class="shortcut-hint"><kbd>J</kbd><kbd>K</kbd> SELECT · <kbd>ENTER</kbd> PLAY</p>
       </aside>
 
       <section class="panel now-panel" data-panel="now">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">REPRODUCIENDO AHORA</p>
-            <h2 id="track-title">Nada seleccionado</h2>
+            <p class="eyebrow">// NOW_PLAYING</p>
+            <h2 id="track-title">NO_TRACK_SELECTED</h2>
           </div>
           <span id="codec-chip" class="chip">—</span>
         </div>
 
         <div class="visualizer" id="visualizer" aria-label="Actividad visual de reproducción">
-          <div class="disc" aria-hidden="true">
-            <div class="disc-ring"></div>
-            <div class="disc-center">A</div>
+          <div class="disc console-readout" aria-hidden="true">
+            <div class="readout-row"><span>SRC</span><b>MP3_STREAM</b></div>
+            <div class="readout-row"><span>BUS</span><b>PCM_S16LE</b></div>
+            <div class="readout-row"><span>RATE</span><b>48000_HZ</b></div>
+            <div class="readout-row"><span>OUT</span><b>OTO_V3</b></div>
+            <div class="console-prompt">AURA&gt;<span class="cursor">_</span></div>
           </div>
           <div class="bars" aria-hidden="true">
             <i style="--h:36%;--d:0"></i><i style="--h:72%;--d:1"></i><i style="--h:48%;--d:2"></i>
@@ -79,10 +82,10 @@
       <aside class="panel metadata-panel" data-panel="metadata">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">DETALLES DE SEÑAL</p>
-            <h2>Metadatos</h2>
+            <p class="eyebrow">// SIGNAL_INSPECTOR</p>
+            <h2>METADATA</h2>
           </div>
-          <button class="icon-button panel-toggle" data-target="metadata" aria-label="Ocultar metadatos">−</button>
+          <button class="icon-button panel-toggle" data-target="metadata" aria-label="Ocultar metadatos">[_]</button>
         </div>
         <dl class="metadata-list">
           <div><dt>Título</dt><dd id="meta-title">—</dd></div>
@@ -92,19 +95,19 @@
           <div><dt>Ruta</dt><dd id="meta-path" class="path-value">—</dd></div>
         </dl>
         <div class="format-card">
-          <span>PIPELINE DE SALIDA</span>
+          <span>OUTPUT_PIPELINE</span>
           <strong>MP3 → PCM S16LE → SRC 48 kHz → Oto v3</strong>
         </div>
       </aside>
     </section>
 
     <footer class="transport">
-      <button id="restore-panels" class="button button-ghost" type="button">Paneles</button>
+      <button id="restore-panels" class="button button-ghost" type="button">[ PANELS ]</button>
       <div class="transport-controls" aria-label="Controles de reproducción">
-        <button id="previous" class="transport-button" aria-label="Anterior">‹</button>
-        <button id="stop" class="transport-button stop-button" aria-label="Detener">■</button>
-        <button id="toggle" class="transport-button play-button" aria-label="Reproducir o pausar">▶</button>
-        <button id="next" class="transport-button" aria-label="Siguiente">›</button>
+        <button id="previous" class="transport-button" aria-label="Anterior">|&lt;</button>
+        <button id="stop" class="transport-button stop-button" aria-label="Detener">[■]</button>
+        <button id="toggle" class="transport-button play-button" aria-label="Reproducir o pausar">PLAY</button>
+        <button id="next" class="transport-button" aria-label="Siguiente">&gt;|</button>
       </div>
       <label class="volume-control">
         <span>VOL</span>

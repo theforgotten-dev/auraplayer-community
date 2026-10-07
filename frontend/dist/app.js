@@ -41,7 +41,7 @@ function render(nextState) {
   if (state.currentIndex >= 0) selectedIndex = state.currentIndex;
   const track = state.queue?.[state.currentIndex];
   ui.queueCount.textContent = state.queue?.length ?? 0;
-  ui.title.textContent = track?.title || 'Nada seleccionado';
+  ui.title.textContent = track?.title || 'NO_TRACK_SELECTED';
   ui.codec.textContent = track?.codec || '—';
   ui.metaTitle.textContent = track?.title || '—';
   ui.metaCodec.textContent = track?.codec || '—';
@@ -61,7 +61,7 @@ function render(nextState) {
   ui.volumeValue.textContent = `${Math.round(state.volume * 100)}%`;
 
   const playing = state.state === 'playing';
-  ui.toggle.textContent = playing ? 'Ⅱ' : '▶';
+  ui.toggle.textContent = playing ? 'PAUSE' : 'PLAY';
   ui.toggle.setAttribute('aria-label', playing ? 'Pausar' : 'Reproducir');
   ui.visualizer.classList.toggle('playing', playing);
   ui.statusDot.className = `status-dot ${playing ? 'playing' : state.state === 'error' ? 'error' : ''}`;
@@ -73,7 +73,7 @@ function render(nextState) {
 
 function renderQueue() {
   if (!state.queue?.length) {
-    ui.queue.innerHTML = `<div class="empty-state"><div class="empty-icon" aria-hidden="true">♫</div><strong>Tu cola está vacía</strong><span>Agrega uno o varios archivos MP3.</span></div>`;
+    ui.queue.innerHTML = `<div class="empty-state"><div class="empty-icon" aria-hidden="true">[ ]</div><strong>QUEUE_EMPTY</strong><span>LOAD ONE OR MORE MP3 FILES</span></div>`;
     return;
   }
   ui.queue.innerHTML = '';
@@ -103,7 +103,7 @@ function formatTime(seconds) {
 }
 
 function statusLabel(value) {
-  return ({ playing: 'Reproduciendo', paused: 'En pausa', loading: 'Cargando', error: 'Revisar error', stopped: 'Motor listo' })[value] || 'Motor listo';
+  return ({ playing: 'ENGINE_PLAYING', paused: 'ENGINE_PAUSED', loading: 'ENGINE_LOADING', error: 'ENGINE_ERROR', stopped: 'ENGINE_READY' })[value] || 'ENGINE_READY';
 }
 
 function showError(message) {
