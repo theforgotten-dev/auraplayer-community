@@ -44,11 +44,11 @@ go run github.com/securego/gosec/v2/cmd/gosec@latest -quiet ./...
 
 ## Riesgos residuales
 
-- La decodificación MP3 ocurre dentro del proceso mediante `go-mp3`. No hay una
-  vulnerabilidad conocida en `v0.3.4` según `govulncheck`, pero un defecto aún
-  desconocido en el parser podría provocar un cierre o consumo excesivo al
-  abrir un MP3 manipulado. Aislar el decoder en un proceso con límites sería el
-  endurecimiento siguiente si se aceptarán archivos de fuentes hostiles.
+- Cada stream MP3 tiene una tarea dedicada que posee el decoder, serializa
+  `Read`/`Seek` y convierte panics de inicialización o lectura en errores. La
+  tarea sigue dentro del proceso: un consumo excesivo de memoria no queda
+  aislado. Ejecutar el decoder en un proceso hijo con límites sería el siguiente
+  endurecimiento si se aceptarán archivos de fuentes hostiles.
 - Los ejecutables locales no están firmados. Una distribución pública debería
   incorporar firma de código, hashes reproducibles y un canal de actualización
   autenticado.

@@ -162,3 +162,5 @@ configuración del usuario bajo `playerdoit/skin.json`.
   la ventana mediante `Invalidate`.
 - No volver a introducir un puente de telemetría serializado; el acceso directo
   a `Controller.Spectrum()` es parte del objetivo de rendimiento de esta rama.
+- Cada `Stream` MP3 envuelve `go-mp3` en una tarea dedicada. El controlador debe
+  cerrar esa tarea después de detener Oto y antes de cerrar el archivo fuente.
