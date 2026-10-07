@@ -1,6 +1,7 @@
 package native
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -9,7 +10,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 )
+
+const maxSkinSize = 256 * 1024
 
 // Skin is the portable visual manifest used by the native UI.
 type Skin struct {
@@ -74,18 +78,38 @@ var builtinSkins = []Skin{
 }
 
 func loadSkin(reader io.Reader) (Skin, error) {
-	limited := io.LimitReader(reader, 256*1024+1)
-	decoder := json.NewDecoder(limited)
+	if reader == nil {
+		return Skin{}, fmt.Errorf("skin source cannot be nil")
+	}
+	contents, err := io.ReadAll(io.LimitReader(reader, maxSkinSize+1))
+	if err != nil {
+		return Skin{}, fmt.Errorf("read skin: %w", err)
+	}
+	if len(contents) > maxSkinSize {
+		return Skin{}, fmt.Errorf("skin exceeds the %d KiB limit", maxSkinSize/1024)
+	}
+
+	decoder := json.NewDecoder(bytes.NewReader(contents))
 	decoder.DisallowUnknownFields()
 	var skin Skin
 	if err := decoder.Decode(&skin); err != nil {
 		return Skin{}, fmt.Errorf("decode skin: %w", err)
 	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		if err == nil {
+			return Skin{}, fmt.Errorf("skin must contain exactly one JSON object")
+		}
+		return Skin{}, fmt.Errorf("decode trailing skin data: %w", err)
+	}
 	if skin.Version != 1 {
 		return Skin{}, fmt.Errorf("unsupported skin version %d", skin.Version)
 	}
-	if strings.TrimSpace(skin.Name) == "" || len(skin.Name) > 64 {
+	if strings.TrimSpace(skin.Name) == "" || len(skin.Name) > 64 || strings.IndexFunc(skin.Name, unicode.IsControl) >= 0 {
 		return Skin{}, fmt.Errorf("skin name must contain 1 to 64 characters")
+	}
+	if len(skin.Author) > 128 || strings.IndexFunc(skin.Author, unicode.IsControl) >= 0 {
+		return Skin{}, fmt.Errorf("skin author must contain at most 128 characters without control characters")
 	}
 	if skin.Metrics.Spacing < 0 || skin.Metrics.Spacing > 32 || skin.Metrics.CornerRadius < 0 || skin.Metrics.CornerRadius > 32 || skin.Metrics.StrokeWidth < 0 || skin.Metrics.StrokeWidth > 4 {
 		return Skin{}, fmt.Errorf("skin metrics are outside their supported range")
@@ -151,6 +175,7 @@ func persistedSkin() Skin {
 	if err != nil {
 		return builtinSkins[0]
 	}
+	// #nosec G304 -- path is derived solely from os.UserConfigDir and a fixed suffix.
 	file, err := os.Open(path)
 	if err != nil {
 		return builtinSkins[0]
@@ -168,7 +193,12 @@ func persistSkin(skin Skin) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	directory := filepath.Dir(path)
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		return err
+	}
+	// #nosec G302 -- directories require the execute bit; 0700 keeps access private.
+	if err := os.Chmod(directory, 0o700); err != nil {
 		return err
 	}
 	contents, err := json.MarshalIndent(skin, "", "  ")

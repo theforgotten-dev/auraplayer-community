@@ -159,7 +159,9 @@ func (a *Analyzer) consume(data []byte) {
 }
 
 func (a *Analyzer) consumeFrame(frame []byte) {
+	// #nosec G115 -- signed PCM uses the same 16 bits in two's-complement form.
 	left := float64(int16(binary.LittleEndian.Uint16(frame[0:2]))) / 32768
+	// #nosec G115 -- signed PCM uses the same 16 bits in two's-complement form.
 	right := float64(int16(binary.LittleEndian.Uint16(frame[2:4]))) / 32768
 
 	a.sampleBufferLeft[a.writeIndex] = left

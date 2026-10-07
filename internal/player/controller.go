@@ -265,42 +265,37 @@ func (c *Controller) loadLocked(index int) error {
 	}
 
 	track := c.queue[index]
+	// #nosec G304 -- track paths originate from explicit user file selection.
 	file, err := os.Open(track.Path)
 	if err != nil {
 		return fmt.Errorf("open %q: %w", track.Title, err)
 	}
 	stream, err := codecs.Decode(filepath.Ext(track.Path), file)
 	if err != nil {
-		file.Close()
-		return err
+		return errors.Join(err, file.Close())
 	}
 
 	outputConfig := pipeline.OutputConfig()
 	normalized, err := pipeline.Normalize(stream.PCM, stream.Config, outputConfig)
 	if err != nil {
-		file.Close()
-		return err
+		return errors.Join(err, file.Close())
 	}
 	analyzer, err := dsp.NewAnalyzer(normalized, outputConfig)
 	if err != nil {
-		file.Close()
-		return err
+		return errors.Join(err, file.Close())
 	}
 
 	if c.engine == nil {
 		engine, err := otoengine.New(outputConfig)
 		if err != nil {
-			file.Close()
-			return err
+			return errors.Join(err, file.Close())
 		}
 		c.engine = engine
 	}
 
 	pcmPlayer := c.engine.NewPlayer(analyzer)
 	if err := pcmPlayer.SetVolume(c.volume); err != nil {
-		pcmPlayer.Close()
-		file.Close()
-		return err
+		return errors.Join(err, pcmPlayer.Close(), file.Close())
 	}
 	c.player = pcmPlayer
 	c.analyzer = analyzer
@@ -368,6 +363,7 @@ func inspectTrack(path string) (Track, error) {
 	if !strings.EqualFold(filepath.Ext(absPath), ".mp3") {
 		return Track{}, fmt.Errorf("unsupported file %q: the desktop prototype accepts MP3", path)
 	}
+	// #nosec G304 -- absPath is an explicit user-selected or command-line audio path.
 	file, err := os.Open(absPath)
 	if err != nil {
 		return Track{}, fmt.Errorf("open %q: %w", path, err)
