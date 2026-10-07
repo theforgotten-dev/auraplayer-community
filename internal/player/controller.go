@@ -14,6 +14,7 @@ import (
 	"playerdoit/internal/audio/otoengine"
 	"playerdoit/internal/audio/pipeline"
 	"playerdoit/internal/codecs"
+	"playerdoit/internal/dsp"
 )
 
 type PlaybackState string
@@ -50,6 +51,7 @@ type Controller struct {
 
 	engine       audio.Engine
 	player       audio.Player
+	analyzer     *dsp.Analyzer
 	source       *os.File
 	queue        []Track
 	currentIndex int
@@ -240,6 +242,17 @@ func (c *Controller) Snapshot() Snapshot {
 	}
 }
 
+// Spectrum returns the latest FFT result without interrupting playback.
+func (c *Controller) Spectrum() dsp.Spectrum {
+	c.mu.Lock()
+	analyzer := c.analyzer
+	c.mu.Unlock()
+	if analyzer == nil {
+		return dsp.EmptySpectrum()
+	}
+	return analyzer.Snapshot()
+}
+
 func (c *Controller) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -268,6 +281,11 @@ func (c *Controller) loadLocked(index int) error {
 		file.Close()
 		return err
 	}
+	analyzer, err := dsp.NewAnalyzer(normalized, outputConfig)
+	if err != nil {
+		file.Close()
+		return err
+	}
 
 	if c.engine == nil {
 		engine, err := otoengine.New(outputConfig)
@@ -278,13 +296,14 @@ func (c *Controller) loadLocked(index int) error {
 		c.engine = engine
 	}
 
-	pcmPlayer := c.engine.NewPlayer(normalized)
+	pcmPlayer := c.engine.NewPlayer(analyzer)
 	if err := pcmPlayer.SetVolume(c.volume); err != nil {
 		pcmPlayer.Close()
 		file.Close()
 		return err
 	}
 	c.player = pcmPlayer
+	c.analyzer = analyzer
 	c.source = file
 	c.currentIndex = index
 	c.position = 0
@@ -297,6 +316,7 @@ func (c *Controller) closeCurrentLocked() error {
 		closeErr = c.player.Close()
 		c.player = nil
 	}
+	c.analyzer = nil
 	if c.source != nil {
 		if err := c.source.Close(); closeErr == nil {
 			closeErr = err

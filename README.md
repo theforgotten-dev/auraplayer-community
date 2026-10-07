@@ -25,6 +25,35 @@ Todas las pistas se normalizan por streaming a PCM estéreo de 48 kHz antes de
 entrar a Oto, por lo que una cola puede mezclar archivos con frecuencias de
 muestreo diferentes.
 
+El monitor central calcula una FFT de 2048 muestras sobre el PCM normalizado y
+muestra 16 bandas logarítmicas entre 40 Hz y 20 kHz. Los canales izquierdo y
+derecho se analizan por separado, incluyendo sus niveles generales. La consulta
+visual se realiza de forma independiente al estado de la cola.
+
+### Skins y mods visuales
+
+El botón `[ SKINS ]` permite escoger una de las apariencias incluidas o importar
+un manifiesto JSON local. La skin activa se conserva entre ejecuciones. Hay un
+ejemplo completo en `skins/ice-terminal.json`:
+
+```json
+{
+  "version": 1,
+  "name": "MI_SKIN",
+  "variables": {
+    "--bg": "#050505",
+    "--green": "#00ff88",
+    "--channel-left": "#00ff88",
+    "--channel-right": "#00ddff"
+  },
+  "css": ".panel { border-width: 2px; }"
+}
+```
+
+`variables` admite propiedades CSS personalizadas y `css` permite modificar la
+composición visual completa. Los manifiestos se validan antes de aplicarse y su
+tamaño máximo es 256 KiB.
+
 Atajos: `Espacio` reproduce o pausa, `j`/`k` recorren la cola, `Enter` reproduce
 la selección y `Ctrl+O` abre el selector de archivos.
 

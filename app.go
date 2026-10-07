@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"os"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
+	"playerdoit/internal/dsp"
 	"playerdoit/internal/player"
 )
 
@@ -45,6 +49,39 @@ func (a *App) OpenFiles() (player.Snapshot, error) {
 
 func (a *App) GetState() player.Snapshot {
 	return a.controller.Snapshot()
+}
+
+func (a *App) GetSpectrum() dsp.Spectrum {
+	return a.controller.Spectrum()
+}
+
+// OpenSkin lets the UI import a local JSON skin without exposing arbitrary
+// filesystem access to browser JavaScript.
+func (a *App) OpenSkin() (string, error) {
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Importar skin de Aura",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Aura Skin (*.json)", Pattern: "*.json"},
+		},
+	})
+	if err != nil || path == "" {
+		return "", err
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+	if info.Size() > 256*1024 {
+		return "", errors.New("skin exceeds the 256 KiB limit")
+	}
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	if !json.Valid(contents) {
+		return "", errors.New("skin is not valid JSON")
+	}
+	return string(contents), nil
 }
 
 func (a *App) Play(index int) (player.Snapshot, error) {
