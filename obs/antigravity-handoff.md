@@ -164,3 +164,5 @@ configuración del usuario bajo `playerdoit/skin.json`.
   a `Controller.Spectrum()` es parte del objetivo de rendimiento de esta rama.
 - Cada `Stream` MP3 envuelve `go-mp3` en una tarea dedicada. El controlador debe
   cerrar esa tarea después de detener Oto y antes de cerrar el archivo fuente.
+  `pcmTask.Close` espera la terminación efectiva de la goroutine; las
+  transiciones crean la tarea siguiente sólo después de completar ese cierre.

@@ -72,6 +72,8 @@ func (task *pcmTask) Close() error {
 	task.closeOnce.Do(func() {
 		close(task.stop)
 	})
+	// Waiting for done is intentional: callers can create the next track only
+	// after this decoder goroutine has released its source and exited.
 	<-task.done
 	return nil
 }
