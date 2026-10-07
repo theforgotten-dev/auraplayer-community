@@ -10,7 +10,7 @@ El diseño de la interfaz recupera las mejores lecciones de los reproductores hi
 
 ### Herencia Clásica
 * **Modularidad a lo Winamp:** Control absoluto del espacio a través de paneles independientes o acoplables, sin menús ocultos ni capas de navegación profundas. Todo está a un clic o a una tecla de distancia.
-* **Contexto Enriquecido a lo Amarok:** Fusión de la reproducción musical con información contextual en tiempo real (metadatos detallados, carátulas y analizadores de espectro alimentados directamente por el motor de audio).
+* **Contexto enriquecido:** Fusión de la reproducción musical con información contextual en tiempo real (metadatos detallados, carátulas y analizadores de espectro alimentados directamente por el motor de audio).
 * **Eficiencia de Datos a lo Foobar2000:** Densidad de información optimizada para que el melómano o desarrollador vea exactamente lo que necesita sin distracciones visuales.
 
 ### Estándares Modernos
