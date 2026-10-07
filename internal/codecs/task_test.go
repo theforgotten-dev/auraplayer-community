@@ -42,6 +42,35 @@ func TestPCMTaskContainsDecoderPanic(t *testing.T) {
 	}
 }
 
+func TestPCMTaskStopsBeforeNextTrackTaskStarts(t *testing.T) {
+	var previousDone <-chan struct{}
+	for track := 0; track < 32; track++ {
+		if previousDone != nil {
+			select {
+			case <-previousDone:
+			default:
+				t.Fatalf("decoder task for track %d is still running", track-1)
+			}
+		}
+
+		task := newPCMTask(bytes.NewReader([]byte("track")))
+		buffer := make([]byte, 5)
+		if _, err := task.Read(buffer); err != nil {
+			t.Fatalf("track %d: %v", track, err)
+		}
+		previousDone = task.done
+		if err := task.Close(); err != nil {
+			t.Fatalf("close track %d: %v", track, err)
+		}
+	}
+
+	select {
+	case <-previousDone:
+	default:
+		t.Fatal("last decoder task is still running")
+	}
+}
+
 type panicReadSeeker struct{}
 
 func (panicReadSeeker) Read([]byte) (int, error) { panic("malformed stream") }

@@ -262,6 +262,8 @@ func (c *Controller) Close() error {
 }
 
 func (c *Controller) loadLocked(index int) error {
+	// This call is synchronous and waits for the current decoder task to exit.
+	// A new per-track task is created only after the previous one is gone.
 	if err := c.closeCurrentLocked(); err != nil {
 		return err
 	}
