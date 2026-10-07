@@ -116,6 +116,13 @@ archivo, mostró actividad independiente por canal y permaneció responsiva. En
 una observación breve de ocho segundos, el working set se estabilizó alrededor
 de 83 MB y la memoria privada alrededor de 107 MB, sin crecimiento continuo.
 
+La ventana usa decoraciones propias de Gio en lugar de la barra de título de
+Windows. La barra superior incorpora un icono vectorial basado en niveles de
+audio, una zona de arrastre y controles vectoriales para minimizar,
+maximizar/restaurar y cerrar. Las acciones se envían mediante
+`system.Action`, por lo que la implementación no depende de llamadas Win32 y
+conserva el redimensionado en los bordes que ofrece Gio.
+
 ## Skins
 
 El gestor ofrece `PHOSPHOR_GREEN`, `AMBER_CRT` y `CYBER_VIOLET`. Una skin JSON

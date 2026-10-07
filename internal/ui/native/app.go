@@ -13,7 +13,9 @@ import (
 	"time"
 
 	"gioui.org/app"
+	"gioui.org/f32"
 	"gioui.org/font"
+	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -35,6 +37,7 @@ const (
 	compactHeight = 460
 	minWidth      = 600
 	minHeight     = 360
+	windowBarH    = 38
 )
 
 type fileResult struct {
@@ -70,7 +73,9 @@ type UI struct {
 	showSkins     bool
 	dialogBusy    bool
 	compactMode   bool
+	windowMode    app.WindowMode
 	fileResults   chan fileResult
+	decorations   widget.Decorations
 
 	openButton     widget.Clickable
 	compactButton  widget.Clickable
@@ -93,8 +98,9 @@ func Run(initialPaths []string) error {
 	window := new(app.Window)
 	window.Option(
 		app.Title("Aura Music Player"),
-		app.Size(unit.Dp(windowWidth), unit.Dp(windowHeight)),
-		app.MinSize(unit.Dp(minWidth), unit.Dp(minHeight)),
+		app.Decorated(false),
+		app.Size(unit.Dp(windowWidth), unit.Dp(windowHeight+windowBarH)),
+		app.MinSize(unit.Dp(minWidth), unit.Dp(minHeight+windowBarH)),
 	)
 	ui := newUI(window, initialPaths)
 	defer ui.controller.Close()
@@ -137,6 +143,9 @@ func (ui *UI) loop() error {
 		switch event := event.(type) {
 		case app.DestroyEvent:
 			return event.Err
+		case app.ConfigEvent:
+			ui.windowMode = event.Config.Mode
+			ui.decorations.Maximized = event.Config.Mode == app.Maximized
 		case app.FrameEvent:
 			ui.receiveFiles()
 			gtx := app.NewContext(&ui.ops, event)
@@ -148,6 +157,9 @@ func (ui *UI) loop() error {
 }
 
 func (ui *UI) update(gtx layout.Context) {
+	if actions := ui.decorations.Update(gtx); actions != 0 {
+		ui.window.Perform(actions)
+	}
 	if !gtx.Now.Before(ui.nextPoll) {
 		ui.refreshState()
 		ui.nextPoll = gtx.Now.Add(200 * time.Millisecond)
@@ -167,11 +179,11 @@ func (ui *UI) update(gtx layout.Context) {
 		ui.compactMode = !ui.compactMode
 		if ui.compactMode {
 			ui.window.Option(
-				app.Size(unit.Dp(compactWidth), unit.Dp(compactHeight)),
+				app.Size(unit.Dp(compactWidth), unit.Dp(compactHeight+windowBarH)),
 			)
 		} else {
 			ui.window.Option(
-				app.Size(unit.Dp(windowWidth), unit.Dp(windowHeight)),
+				app.Size(unit.Dp(windowWidth), unit.Dp(windowHeight+windowBarH)),
 			)
 		}
 	}
@@ -223,8 +235,14 @@ func (ui *UI) layout(gtx layout.Context) layout.Dimensions {
 			layout.Rigid(ui.layoutTransport),
 		)
 	}
-	main := func(gtx layout.Context) layout.Dimensions {
+	playerContent := func(gtx layout.Context) layout.Dimensions {
 		return layout.UniformInset(unit.Dp(14)).Layout(gtx, content)
+	}
+	main := func(gtx layout.Context) layout.Dimensions {
+		return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+			layout.Rigid(ui.layoutWindowBar),
+			layout.Flexed(1, playerContent),
+		)
 	}
 	if !ui.showSkins {
 		return main(gtx)
@@ -237,6 +255,126 @@ func (ui *UI) layout(gtx layout.Context) layout.Dimensions {
 		}),
 		layout.Stacked(ui.layoutSkinManager),
 	)
+}
+
+func (ui *UI) layoutWindowBar(gtx layout.Context) layout.Dimensions {
+	height := gtx.Dp(windowBarH)
+	gtx.Constraints = layout.Exact(image.Pt(gtx.Constraints.Max.X, height))
+	fillRect(gtx.Ops, image.Rectangle{Max: gtx.Constraints.Max}, ui.palette.PanelRaised)
+	fillRect(gtx.Ops, image.Rect(0, height-1, gtx.Constraints.Max.X, height), ui.palette.LineHot)
+
+	return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
+		layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
+			return ui.decorations.LayoutMove(gtx, func(gtx layout.Context) layout.Dimensions {
+				return layout.Inset{Left: 12, Right: 8}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle, Gap: gtx.Dp(9)}.Layout(gtx,
+						layout.Rigid(ui.layoutWindowIcon),
+						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+							return ui.label(gtx, "AURA // PLAYERDOIT", 9, ui.palette.Text, true)
+						}),
+						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+							return ui.label(gtx, "NATIVE_AUDIO", 7, ui.palette.Muted, false)
+						}),
+					)
+				})
+			})
+		}),
+		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+			return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					return ui.windowButton(gtx, system.ActionMinimize, windowIconMinimize, false)
+				}),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					return ui.windowButton(gtx, system.ActionMaximize, windowIconMaximize, false)
+				}),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					return ui.windowButton(gtx, system.ActionClose, windowIconClose, true)
+				}),
+			)
+		}),
+	)
+}
+
+type windowIcon uint8
+
+const (
+	windowIconMinimize windowIcon = iota
+	windowIconMaximize
+	windowIconClose
+)
+
+func (ui *UI) layoutWindowIcon(gtx layout.Context) layout.Dimensions {
+	size := image.Pt(gtx.Dp(18), gtx.Dp(18))
+	fillRect(gtx.Ops, image.Rectangle{Max: size}, ui.palette.Background)
+	stroke := max(1, gtx.Dp(1))
+	fillRect(gtx.Ops, image.Rect(0, 0, size.X, stroke), ui.palette.Accent)
+	fillRect(gtx.Ops, image.Rect(0, size.Y-stroke, size.X, size.Y), ui.palette.Accent)
+	fillRect(gtx.Ops, image.Rect(0, 0, stroke, size.Y), ui.palette.Accent)
+	fillRect(gtx.Ops, image.Rect(size.X-stroke, 0, size.X, size.Y), ui.palette.Accent)
+	barW := max(2, gtx.Dp(2))
+	for index, barH := range []int{5, 10, 7, 13} {
+		x := gtx.Dp(3) + index*gtx.Dp(3)
+		h := gtx.Dp(unit.Dp(barH))
+		fillRect(gtx.Ops, image.Rect(x, size.Y-gtx.Dp(3)-h, x+barW, size.Y-gtx.Dp(3)), ui.palette.Accent)
+	}
+	return layout.Dimensions{Size: size}
+}
+
+func (ui *UI) windowButton(gtx layout.Context, action system.Action, icon windowIcon, danger bool) layout.Dimensions {
+	button := ui.decorations.Clickable(action)
+	width, height := gtx.Dp(44), gtx.Dp(windowBarH)
+	gtx.Constraints = layout.Exact(image.Pt(width, height))
+	return button.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+		system.ActionInputOp(action).Add(gtx.Ops)
+		background := ui.palette.PanelRaised
+		foreground := ui.palette.Muted
+		if button.Hovered() {
+			background = ui.palette.Line
+			foreground = ui.palette.Text
+			if danger {
+				background = ui.palette.Danger
+				foreground = ui.palette.Background
+			}
+		}
+		fillRect(gtx.Ops, image.Rectangle{Max: gtx.Constraints.Max}, background)
+		ui.drawWindowIcon(gtx, icon, foreground)
+		return layout.Dimensions{Size: gtx.Constraints.Max}
+	})
+}
+
+func (ui *UI) drawWindowIcon(gtx layout.Context, icon windowIcon, foreground color.NRGBA) {
+	centerX, centerY := float32(gtx.Constraints.Max.X)/2, float32(gtx.Constraints.Max.Y)/2
+	strokeWidth := float32(max(1, gtx.Dp(1)))
+	if icon == windowIconMinimize {
+		fillRect(gtx.Ops, image.Rect(int(centerX)-6, int(centerY)+4, int(centerX)+6, int(centerY)+5), foreground)
+		return
+	}
+	if icon == windowIconMaximize {
+		if ui.windowMode == app.Maximized {
+			drawOutlineRect(gtx.Ops, image.Rect(int(centerX)-4, int(centerY)-5, int(centerX)+7, int(centerY)+4), foreground)
+			drawOutlineRect(gtx.Ops, image.Rect(int(centerX)-7, int(centerY)-2, int(centerX)+4, int(centerY)+7), foreground)
+		} else {
+			drawOutlineRect(gtx.Ops, image.Rect(int(centerX)-6, int(centerY)-6, int(centerX)+6, int(centerY)+6), foreground)
+		}
+		return
+	}
+
+	var path clip.Path
+	path.Begin(gtx.Ops)
+	path.MoveTo(f32.Pt(centerX-5, centerY-5))
+	path.LineTo(f32.Pt(centerX+5, centerY+5))
+	path.MoveTo(f32.Pt(centerX+5, centerY-5))
+	path.LineTo(f32.Pt(centerX-5, centerY+5))
+	outline := clip.Stroke{Path: path.End(), Width: strokeWidth}.Op().Push(gtx.Ops)
+	paint.Fill(gtx.Ops, foreground)
+	outline.Pop()
+}
+
+func drawOutlineRect(ops *op.Ops, rectangle image.Rectangle, foreground color.NRGBA) {
+	fillRect(ops, image.Rect(rectangle.Min.X, rectangle.Min.Y, rectangle.Max.X, rectangle.Min.Y+1), foreground)
+	fillRect(ops, image.Rect(rectangle.Min.X, rectangle.Max.Y-1, rectangle.Max.X, rectangle.Max.Y), foreground)
+	fillRect(ops, image.Rect(rectangle.Min.X, rectangle.Min.Y, rectangle.Min.X+1, rectangle.Max.Y), foreground)
+	fillRect(ops, image.Rect(rectangle.Max.X-1, rectangle.Min.Y, rectangle.Max.X, rectangle.Max.Y), foreground)
 }
 
 func (ui *UI) isCompact(gtx layout.Context) bool {
