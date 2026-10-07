@@ -269,11 +269,11 @@ func (ui *UI) layoutHeader(gtx layout.Context) layout.Dimensions {
 						})
 					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						title := "AURA // AMAROK 3.2"
+						title := "AURA // PLAYERDOIT"
 						eyebrow := "KDE_CLI_EDITION :: OTO_ENGINE"
 						titleSize := float32(16)
 						if compact {
-							title = "AURA // AMAROK"
+							title = "AURA // PLAYER"
 							eyebrow = "CLI_EDITION"
 							titleSize = 13
 						}
