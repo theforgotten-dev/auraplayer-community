@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"go.senan.xyz/taglib"
+
 	"playerdoit/internal/audio"
 	"playerdoit/internal/audio/otoengine"
 	"playerdoit/internal/audio/pipeline"
@@ -372,31 +374,33 @@ func inspectTrack(path string) (Track, error) {
 	if err != nil {
 		return Track{}, err
 	}
-	if !strings.EqualFold(filepath.Ext(absPath), ".mp3") {
-		return Track{}, fmt.Errorf("unsupported file %q: the desktop prototype accepts MP3", path)
+	extension := strings.ToLower(filepath.Ext(absPath))
+	if !codecs.IsSupported(extension) {
+		return Track{}, fmt.Errorf("unsupported file %q: expected %s", path, strings.Join(codecs.SupportedExtensions(), ", "))
 	}
-	// #nosec G304 -- absPath is an explicit user-selected or command-line audio path.
-	file, err := os.Open(absPath)
+	info, err := os.Stat(absPath)
 	if err != nil {
-		return Track{}, fmt.Errorf("open %q: %w", path, err)
+		return Track{}, fmt.Errorf("inspect %q: %w", path, err)
 	}
-	defer file.Close()
-	stream, err := codecs.Decode(".mp3", file)
+	if !info.Mode().IsRegular() {
+		return Track{}, fmt.Errorf("audio source %q is not a regular file", path)
+	}
+	properties, err := taglib.ReadProperties(absPath)
 	if err != nil {
-		return Track{}, err
+		return Track{}, fmt.Errorf("read audio properties for %q: %w", path, err)
 	}
-	if decoderTask, ok := stream.PCM.(io.Closer); ok {
-		defer decoderTask.Close()
+	if properties.SampleRate == 0 || properties.Channels == 0 || properties.Channels > 2 {
+		return Track{}, fmt.Errorf("unsupported audio layout in %q: %d Hz, %d channels", path, properties.SampleRate, properties.Channels)
 	}
 	title := strings.TrimSuffix(filepath.Base(absPath), filepath.Ext(absPath))
 	return Track{
 		ID:         absPath,
 		Title:      title,
 		Path:       absPath,
-		Codec:      "MP3",
-		Duration:   stream.Duration.Seconds(),
-		SampleRate: stream.Config.SampleRate,
-		Channels:   stream.Config.ChannelCount,
+		Codec:      codecs.Name(extension),
+		Duration:   properties.Length.Seconds(),
+		SampleRate: int(properties.SampleRate),
+		Channels:   int(properties.Channels),
 	}, nil
 }
 

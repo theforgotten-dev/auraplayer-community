@@ -28,9 +28,8 @@ func OutputConfig() audio.Config {
 	}
 }
 
-// Normalize converts a seekable PCM source to the target sample rate while it
-// is read. The current implementation accepts stereo signed 16-bit PCM, which
-// is the format produced by go-mp3.
+// Normalize converts mono or stereo signed 16-bit PCM to the target sample
+// rate and duplicates mono samples into both output channels.
 func Normalize(source io.ReadSeeker, sourceConfig, targetConfig audio.Config) (io.ReadSeeker, error) {
 	if source == nil {
 		return nil, errors.New("PCM source cannot be nil")
@@ -41,23 +40,25 @@ func Normalize(source io.ReadSeeker, sourceConfig, targetConfig audio.Config) (i
 	if err := targetConfig.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid target PCM configuration: %w", err)
 	}
-	if err := validateStereoS16(sourceConfig); err != nil {
+	if err := validateSourceS16(sourceConfig); err != nil {
 		return nil, fmt.Errorf("source PCM: %w", err)
 	}
 	if err := validateStereoS16(targetConfig); err != nil {
 		return nil, fmt.Errorf("target PCM: %w", err)
 	}
 
-	if sourceConfig.SampleRate == targetConfig.SampleRate {
+	if sourceConfig.SampleRate == targetConfig.SampleRate && sourceConfig.ChannelCount == targetConfig.ChannelCount {
 		return source, nil
 	}
 
 	stream := &resampledPCM{
-		source:     source,
-		sourceRate: int64(sourceConfig.SampleRate),
-		targetRate: int64(targetConfig.SampleRate),
-		frames:     make([][2]float64, streamFrames),
-		encoded:    make([]byte, streamFrames*4),
+		source:           source,
+		sourceRate:       int64(sourceConfig.SampleRate),
+		targetRate:       int64(targetConfig.SampleRate),
+		sourceChannels:   sourceConfig.ChannelCount,
+		sourceFrameBytes: int64(sourceConfig.ChannelCount * 2),
+		frames:           make([][2]float64, streamFrames),
+		encoded:          make([]byte, streamFrames*4),
 	}
 	stream.resetResampler()
 	return stream, nil
@@ -66,16 +67,18 @@ func Normalize(source io.ReadSeeker, sourceConfig, targetConfig audio.Config) (i
 type resampledPCM struct {
 	mu sync.Mutex
 
-	source         io.ReadSeeker
-	sourceRate     int64
-	targetRate     int64
-	streamer       *pcm16Streamer
-	resampler      *beep.Resampler
-	frames         [][2]float64
-	encoded        []byte
-	pending        []byte
-	outputPosition int64
-	drained        bool
+	source           io.ReadSeeker
+	sourceRate       int64
+	targetRate       int64
+	sourceChannels   int
+	sourceFrameBytes int64
+	streamer         *pcm16Streamer
+	resampler        *beep.Resampler
+	frames           [][2]float64
+	encoded          []byte
+	pending          []byte
+	outputPosition   int64
+	drained          bool
 }
 
 func (r *resampledPCM) Read(destination []byte) (int, error) {
@@ -153,10 +156,10 @@ func (r *resampledPCM) Seek(offset int64, whence int) (int64, error) {
 	if err != nil {
 		return r.outputPosition, err
 	}
-	if sourceFrame > math.MaxInt64/4 {
+	if sourceFrame > math.MaxInt64/r.sourceFrameBytes {
 		return r.outputPosition, errors.New("seek position is too large")
 	}
-	if _, err := r.source.Seek(sourceFrame*4, io.SeekStart); err != nil {
+	if _, err := r.source.Seek(sourceFrame*r.sourceFrameBytes, io.SeekStart); err != nil {
 		return r.outputPosition, fmt.Errorf("seek source PCM: %w", err)
 	}
 
@@ -169,8 +172,9 @@ func (r *resampledPCM) Seek(offset int64, whence int) (int64, error) {
 
 func (r *resampledPCM) resetResampler() {
 	r.streamer = &pcm16Streamer{
-		source: r.source,
-		buffer: make([]byte, streamFrames*4),
+		source:   r.source,
+		channels: r.sourceChannels,
+		buffer:   make([]byte, streamFrames*r.sourceChannels*2),
 	}
 	r.resampler = beep.Resample(
 		resampleQuality,
@@ -181,9 +185,10 @@ func (r *resampledPCM) resetResampler() {
 }
 
 type pcm16Streamer struct {
-	source io.Reader
-	buffer []byte
-	err    error
+	source   io.Reader
+	channels int
+	buffer   []byte
+	err      error
 }
 
 func (s *pcm16Streamer) Stream(samples [][2]float64) (int, bool) {
@@ -191,13 +196,14 @@ func (s *pcm16Streamer) Stream(samples [][2]float64) (int, bool) {
 		return 0, false
 	}
 
-	needed := len(samples) * 4
+	frameBytes := s.channels * 2
+	needed := len(samples) * frameBytes
 	if cap(s.buffer) < needed {
 		s.buffer = make([]byte, needed)
 	}
 	buffer := s.buffer[:needed]
 	read, err := io.ReadFull(s.source, buffer)
-	if read%4 != 0 {
+	if read%frameBytes != 0 {
 		s.err = io.ErrUnexpectedEOF
 		return 0, false
 	}
@@ -206,13 +212,16 @@ func (s *pcm16Streamer) Stream(samples [][2]float64) (int, bool) {
 		return 0, false
 	}
 
-	frames := read / 4
+	frames := read / frameBytes
 	for index := 0; index < frames; index++ {
-		offset := index * 4
+		offset := index * frameBytes
 		// #nosec G115 -- signed PCM uses the same 16 bits in two's-complement form.
 		left := int16(binary.LittleEndian.Uint16(buffer[offset : offset+2]))
-		// #nosec G115 -- signed PCM uses the same 16 bits in two's-complement form.
-		right := int16(binary.LittleEndian.Uint16(buffer[offset+2 : offset+4]))
+		right := left
+		if s.channels == 2 {
+			// #nosec G115 -- signed PCM uses the same 16 bits in two's-complement form.
+			right = int16(binary.LittleEndian.Uint16(buffer[offset+2 : offset+4]))
+		}
 		samples[index][0] = float64(left) / 32768
 		samples[index][1] = float64(right) / 32768
 	}
@@ -256,6 +265,16 @@ func scaleFrames(frames, numerator, denominator int64) (int64, error) {
 func validateStereoS16(config audio.Config) error {
 	if config.ChannelCount != 2 {
 		return errors.New("only stereo PCM is supported")
+	}
+	if config.Format != audio.FormatSignedInt16LE {
+		return errors.New("only signed 16-bit little-endian PCM is supported")
+	}
+	return nil
+}
+
+func validateSourceS16(config audio.Config) error {
+	if config.ChannelCount != 1 && config.ChannelCount != 2 {
+		return errors.New("only mono or stereo PCM is supported")
 	}
 	if config.Format != audio.FormatSignedInt16LE {
 		return errors.New("only signed 16-bit little-endian PCM is supported")

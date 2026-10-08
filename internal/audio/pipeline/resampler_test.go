@@ -67,10 +67,34 @@ func TestResampledSeekMapsOutputTimeToSource(t *testing.T) {
 	}
 }
 
-func TestNormalizeRejectsUnsupportedPCM(t *testing.T) {
-	config := audio.Config{SampleRate: 44_100, ChannelCount: 1, Format: audio.FormatSignedInt16LE}
+func TestNormalizeDuplicatesMonoIntoStereo(t *testing.T) {
+	mono := make([]byte, 200)
+	for offset := 0; offset < len(mono); offset += 2 {
+		binary.LittleEndian.PutUint16(mono[offset:offset+2], uint16(int16(12_345)))
+	}
+	config := audio.Config{SampleRate: 48_000, ChannelCount: 1, Format: audio.FormatSignedInt16LE}
+	normalized, err := Normalize(bytes.NewReader(mono), config, OutputConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	output, err := io.ReadAll(normalized)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(output) == 0 || len(output)%4 != 0 {
+		t.Fatalf("normalized mono produced %d bytes", len(output))
+	}
+	for offset := 0; offset < len(output); offset += 4 {
+		if !bytes.Equal(output[offset:offset+2], output[offset+2:offset+4]) {
+			t.Fatalf("frame %d differs between channels", offset/4)
+		}
+	}
+}
+
+func TestNormalizeRejectsMultichannelPCM(t *testing.T) {
+	config := audio.Config{SampleRate: 44_100, ChannelCount: 3, Format: audio.FormatSignedInt16LE}
 	if _, err := Normalize(bytes.NewReader(nil), config, OutputConfig()); err == nil {
-		t.Fatal("Normalize() accepted mono PCM")
+		t.Fatal("Normalize() accepted three-channel PCM")
 	}
 }
 

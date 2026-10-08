@@ -6,8 +6,9 @@ renderizada directamente por GPU. No utiliza WebView, HTML ni JavaScript.
 
 ## Aura Desktop
 
-La aplicación permite agregar varios MP3 mediante el selector nativo del
-sistema o arrastrándolos desde Explorer sobre cualquier punto de la ventana.
+La aplicación permite agregar archivos MP3, WAV, FLAC, OGG Vorbis, AAC, M4A y
+WMA mediante el selector nativo del sistema o arrastrándolos desde Explorer
+sobre cualquier punto de la ventana.
 Los archivos soltados se validan, se agregan a la cola y el primero comienza a
 reproducirse cuando la cola estaba vacía. También permite navegar la cola,
 reproducir, pausar, detener, buscar una posición y ajustar el volumen.
@@ -32,9 +33,26 @@ go build -ldflags "-H=windowsgui -s -w" -o build/bin/aura-native.exe .
 ejecutable generado usa ese recurso en Explorer, el selector de ventanas y la
 barra de tareas.
 
+Para compilar el instalador de Windows x64 se requiere Inno Setup 6:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\installer\build-installer.ps1 -Version 1.0.0
+```
+
+El instalador queda en `dist/Aura-Music-Player-Setup-1.0.0.exe`, instala Aura
+solo para el usuario actual y ofrece crear accesos directos y asociar los
+formatos de audio compatibles. La configuración personal de skins no se
+elimina al desinstalar.
+
 Todas las pistas se normalizan por streaming a PCM estéreo de 48 kHz antes de
-entrar a Oto. Una misma cola puede mezclar archivos con frecuencias de muestreo
-diferentes.
+entrar a Oto. Una misma cola puede mezclar formatos, archivos mono o estéreo y
+frecuencias de muestreo diferentes.
+
+WAV, FLAC y OGG Vorbis se decodifican mediante los adaptadores nativos de Beep.
+En Windows, AAC, M4A y WMA se decodifican mediante Media Foundation. Estos tres
+formatos mantienen un cache PCM temporal en disco para permitir búsquedas sin
+retener la canción decodificada completa en memoria; el cache se elimina al
+cambiar de pista o cerrar el reproductor.
 
 El monitor central calcula una FFT de 2048 muestras sobre el PCM normalizado y
 dibuja 16 bandas logarítmicas entre 40 Hz y 20 kHz. Los canales izquierdo y
@@ -76,11 +94,13 @@ aplicarse y tiene un límite de 256 KiB.
 
 ## CLI
 
-Los MP3 se detectan por extensión, se decodifican por streaming y se envían al
-motor como PCM:
+Los formatos comprimidos se detectan por extensión, se decodifican por
+streaming y se envían al motor como PCM:
 
 ```powershell
 go run ./cmd/player ./audio.mp3
+go run ./cmd/player ./audio.flac
+go run ./cmd/player ./audio.m4a
 ```
 
 También se admite PCM crudo. Los valores predeterminados son 44.1 kHz, estéreo

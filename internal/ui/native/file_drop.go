@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"playerdoit/internal/codecs"
 )
 
 const maxDroppedFiles = 256
 
-func acceptedDroppedMP3(paths []string) ([]string, error) {
+func acceptedDroppedAudio(paths []string) ([]string, error) {
 	if len(paths) > maxDroppedFiles {
 		return nil, fmt.Errorf("a drop can contain at most %d files", maxDroppedFiles)
 	}
@@ -16,7 +18,7 @@ func acceptedDroppedMP3(paths []string) ([]string, error) {
 	accepted := make([]string, 0, len(paths))
 	seen := make(map[string]struct{}, len(paths))
 	for _, path := range paths {
-		if !strings.EqualFold(filepath.Ext(path), ".mp3") {
+		if !codecs.IsSupported(filepath.Ext(path)) {
 			continue
 		}
 		absolute, err := filepath.Abs(path)
@@ -31,7 +33,7 @@ func acceptedDroppedMP3(paths []string) ([]string, error) {
 		accepted = append(accepted, absolute)
 	}
 	if len(accepted) == 0 {
-		return nil, fmt.Errorf("drop one or more MP3 files")
+		return nil, fmt.Errorf("drop one or more supported audio files")
 	}
 	return accepted, nil
 }

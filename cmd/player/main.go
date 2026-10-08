@@ -33,7 +33,7 @@ func run() error {
 	flag.Parse()
 
 	if flag.NArg() != 1 {
-		return errors.New("usage: playerdoit [flags] <audio.mp3|audio.pcm>")
+		return errors.New("usage: playerdoit [flags] <audio.mp3|wav|flac|ogg|aac|m4a|wma|pcm>")
 	}
 
 	path := flag.Arg(0)
@@ -45,9 +45,10 @@ func run() error {
 	defer file.Close()
 
 	var pcm io.ReadSeeker = file
-	switch strings.ToLower(filepath.Ext(path)) {
-	case ".mp3":
-		stream, err := codecs.Decode(".mp3", file)
+	extension := strings.ToLower(filepath.Ext(path))
+	switch {
+	case codecs.IsSupported(extension):
+		stream, err := codecs.Decode(extension, file)
 		if err != nil {
 			return err
 		}
@@ -56,14 +57,14 @@ func run() error {
 			defer decoderTask.Close()
 		}
 		config = stream.Config
-	case ".pcm", ".raw":
+	case extension == ".pcm" || extension == ".raw":
 		format, err := parseFormat(formatName)
 		if err != nil {
 			return err
 		}
 		config.Format = format
 	default:
-		return fmt.Errorf("unsupported audio file %q: expected .mp3, .pcm or .raw", path)
+		return fmt.Errorf("unsupported audio file %q: expected %s, .pcm or .raw", path, strings.Join(codecs.SupportedExtensions(), ", "))
 	}
 
 	engine, err := otoengine.New(config)

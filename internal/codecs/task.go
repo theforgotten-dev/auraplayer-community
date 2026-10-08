@@ -39,6 +39,7 @@ type pcmTask struct {
 	done      chan struct{}
 	closeOnce sync.Once
 	callMu    sync.Mutex
+	closeErr  error
 }
 
 func newPCMTask(source io.ReadSeeker) *pcmTask {
@@ -75,7 +76,7 @@ func (task *pcmTask) Close() error {
 	// Waiting for done is intentional: callers can create the next track only
 	// after this decoder goroutine has released its source and exited.
 	<-task.done
-	return nil
+	return task.closeErr
 }
 
 func (task *pcmTask) call(request pcmTaskRequest) (pcmTaskResult, error) {
@@ -102,6 +103,9 @@ func (task *pcmTask) call(request pcmTaskRequest) (pcmTaskResult, error) {
 
 func (task *pcmTask) run(source io.ReadSeeker) {
 	defer close(task.done)
+	if closer, ok := source.(io.Closer); ok {
+		defer func() { task.closeErr = closer.Close() }()
+	}
 	for {
 		select {
 		case <-task.stop:
