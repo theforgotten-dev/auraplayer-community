@@ -26,6 +26,7 @@ import (
 	"gioui.org/widget/material"
 	"gioui.org/x/explorer"
 
+	"playerdoit/internal/codecs"
 	"playerdoit/internal/dsp"
 	"playerdoit/internal/player"
 )
@@ -463,7 +464,7 @@ func (ui *UI) layoutHeader(gtx layout.Context) layout.Dimensions {
 						return ui.button(gtx, &ui.compactButton, modeText, false)
 					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						return ui.button(gtx, &ui.openButton, "[ + LOAD MP3 ]", true)
+						return ui.button(gtx, &ui.openButton, "[ + LOAD AUDIO ]", true)
 					}),
 				)
 			}),
@@ -631,7 +632,7 @@ func (ui *UI) layoutQueue(gtx layout.Context) layout.Dimensions {
 			layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 				if len(ui.state.Queue) == 0 {
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						return ui.label(gtx, "[ ]\n\nQUEUE_EMPTY\nUSE [ + LOAD MP3 ]\nOR DROP MP3 ANYWHERE", 9, ui.palette.Muted, false)
+						return ui.label(gtx, "[ ]\n\nQUEUE_EMPTY\nUSE [ + LOAD AUDIO ]\nOR DROP AUDIO ANYWHERE", 9, ui.palette.Muted, false)
 					})
 				}
 				return material.List(ui.theme, &ui.queueList).Layout(gtx, len(ui.state.Queue), func(gtx layout.Context, index int) layout.Dimensions {
@@ -895,7 +896,7 @@ func (ui *UI) layoutMetadata(gtx layout.Context) layout.Dimensions {
 								return ui.label(gtx, "SIGNAL_PIPELINE", 8, ui.palette.Accent, true)
 							}),
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								return ui.label(gtx, "MP3 → PCM → SRC 48k → FFT → Oto", 7, ui.palette.Text, false)
+								return ui.label(gtx, "CODEC → PCM → SRC 48k → FFT → Oto", 7, ui.palette.Text, false)
 							}),
 						)
 					})
@@ -1052,7 +1053,7 @@ func (ui *UI) skinCard(gtx layout.Context, index int) layout.Dimensions {
 func (ui *UI) chooseAudio() {
 	ui.dialogBusy = true
 	go func() {
-		readers, err := ui.explorer.ChooseFiles(".mp3")
+		readers, err := ui.explorer.ChooseFiles(codecs.SupportedExtensions()...)
 		if errors.Is(err, explorer.ErrUserDecline) {
 			err = nil
 		}
@@ -1097,7 +1098,7 @@ func (ui *UI) receiveFiles() {
 				continue
 			}
 			if result.dropped {
-				accepted, err := acceptedDroppedMP3(result.paths)
+				accepted, err := acceptedDroppedAudio(result.paths)
 				if err != nil {
 					ui.message = "ERR:: " + err.Error()
 					continue
@@ -1112,7 +1113,7 @@ func (ui *UI) receiveFiles() {
 				}
 				ui.runAction(err)
 				if err == nil && result.dropped {
-					ui.message = fmt.Sprintf("DROP:: %d MP3 RECEIVED", len(result.paths))
+					ui.message = fmt.Sprintf("DROP:: %d AUDIO FILES RECEIVED", len(result.paths))
 				}
 			}
 			if result.skin != nil {

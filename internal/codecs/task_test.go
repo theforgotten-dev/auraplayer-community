@@ -71,6 +71,27 @@ func TestPCMTaskStopsBeforeNextTrackTaskStarts(t *testing.T) {
 	}
 }
 
+func TestPCMTaskClosesOwnedDecoderBeforeExit(t *testing.T) {
+	source := &closingReadSeeker{Reader: bytes.NewReader([]byte("track"))}
+	task := newPCMTask(source)
+	if err := task.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if !source.closed {
+		t.Fatal("decoder source remained open after task exit")
+	}
+}
+
+type closingReadSeeker struct {
+	*bytes.Reader
+	closed bool
+}
+
+func (source *closingReadSeeker) Close() error {
+	source.closed = true
+	return nil
+}
+
 type panicReadSeeker struct{}
 
 func (panicReadSeeker) Read([]byte) (int, error) { panic("malformed stream") }
