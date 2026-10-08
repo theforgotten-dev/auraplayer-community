@@ -1,5 +1,12 @@
 # playerdoit
 
+## Licencia
+
+Software privativo. Copyright (c) 2026 Juan Pablo Muñoz Leiva (empowdered).
+Todos los derechos reservados. El uso, la copia, la modificación y la
+distribución requieren autorización previa y por escrito. Consulta [LICENSE](LICENSE).
+Las dependencias y los materiales de terceros conservan sus propias licencias.
+
 Reproductor de audio modular escrito en Go. Usa Oto v3 como motor PCM,
 `go-mp3` para decodificación por streaming y Gio para una interfaz de escritorio
 renderizada directamente por GPU. No utiliza WebView, HTML ni JavaScript.
