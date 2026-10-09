@@ -126,3 +126,25 @@ Formatos PCM disponibles: `s16le`, `u8` y `f32le`.
 go test ./...
 go vet ./...
 ```
+
+## Linux (Debian 13)
+
+El paquete de entrega para Linux es un `.deb` nativo para `amd64`. Los scripts
+de empaquetado viven en `packaging/` y generan el binario `/usr/bin/aura-player`,
+el lanzador `/usr/share/applications/aura-player.desktop`, los iconos en
+`/usr/share/icons/hicolor/` y la documentación en `/usr/share/doc/aura-player/`.
+
+En un sistema Debian 13 (trixie) limpio, instala primero las dependencias de
+compilación y luego construye el paquete:
+
+```bash
+sudo ./packaging/install-build-deps.sh
+./packaging/build-deb.sh 1.0.0 1
+```
+
+El resultado queda en `dist/aura-player_1.0.0-1_amd64.deb`. El campo `Depends`
+se calcula automáticamente con `dpkg-shlibdeps`; solo la dependencia ALSA
+`libasound2t64` se declara a mano porque el motor la carga en tiempo de
+ejecución mediante `dlopen`. El paquete no ejecuta `sudo`, servicios ni
+`postinst`/`prerm`, y la skin del usuario en `$XDG_CONFIG_HOME/playerdoit` se
+conserva al desinstalar.
