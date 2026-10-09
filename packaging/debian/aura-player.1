@@ -1,0 +1,36 @@
+.TH AURA-PLAYER 1 "2026" "Aura Music Player" "User Commands"
+.SH NAME
+aura-player \- modular GPU-rendered audio player
+.SH SYNOPSIS
+.B aura-player
+.RI [ file ...]
+.SH DESCRIPTION
+.B aura-player
+is a modular audio player written in Go. It uses Oto as the PCM engine,
+.B go-mp3
+for streaming MP3 decoding and Gio for a desktop interface rendered directly
+by the GPU. It does not use a WebView, HTML or JavaScript.
+.PP
+When one or more file paths are given on the command line, they are appended
+to the queue and the first one starts playing. This allows file-manager
+associations and direct playback.
+.SH FORMATS
+WAV, FLAC and Ogg Vorbis are decoded through the native beep adapters. MP3 is
+decoded by streaming with
+.BR go-mp3 .
+All tracks are streamed and normalised to 48 kHz stereo PCM before entering the
+audio engine, so a single queue may mix formats, mono or stereo files and
+different sample rates.
+.SH FILES
+.TP
+.I $XDG_CONFIG_HOME/playerdoit
+User skins and preferences. The active skin is preserved across upgrades and
+uninstalls.
+.SH OPTIONS
+.B aura-player
+takes no options other than audio files. Any argument is treated as a path to
+add to the queue.
+.SH SEE ALSO
+.BR ffmpeg (1)
+.SH AUTHOR
+Juan Pablo Mu\u00f1oz Leiva (empowdered).
