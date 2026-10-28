@@ -33,3 +33,13 @@ func TestAcceptedDroppedAudioLimitsBatchSize(t *testing.T) {
 		t.Fatalf("error = %v, want batch size limit", err)
 	}
 }
+
+func TestAcceptedDroppedMixedMedia(t *testing.T) {
+	paths, err := acceptedDroppedAudio([]string{"song.mp3", "clip.MP4", "movie.mkv", "clip.MP4", "notes.txt"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(paths) != 3 {
+		t.Fatalf("mixed drop = %v", paths)
+	}
+}
