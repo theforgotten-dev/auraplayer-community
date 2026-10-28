@@ -58,6 +58,7 @@ type Analyzer struct {
 	totalSamples      int
 	carry             []byte
 	spectrum          Spectrum
+	published         Spectrum
 }
 
 // NewAnalyzer wraps stereo signed 16-bit little-endian PCM.
@@ -84,6 +85,7 @@ func NewAnalyzer(source io.ReadSeeker, config audio.Config) (*Analyzer, error) {
 		leftCoeffs:        make([]complex128, fftSize/2+1),
 		rightCoeffs:       make([]complex128, fftSize/2+1),
 		spectrum:          EmptySpectrum(),
+		published:         EmptySpectrum(),
 		carry:             make([]byte, 0, frameSize-1),
 	}
 	windowSum := 0.0
@@ -107,26 +109,22 @@ func EmptySpectrum() Spectrum {
 
 func (a *Analyzer) Read(destination []byte) (int, error) {
 	a.sourceMu.Lock()
+	defer a.sourceMu.Unlock()
 	read, err := a.source.Read(destination)
-	a.sourceMu.Unlock()
 	if read > 0 {
-		a.mu.Lock()
 		a.consume(destination[:read])
-		a.mu.Unlock()
 	}
 	return read, err
 }
 
 func (a *Analyzer) Seek(offset int64, whence int) (int64, error) {
 	a.sourceMu.Lock()
+	defer a.sourceMu.Unlock()
 	position, err := a.source.Seek(offset, whence)
-	a.sourceMu.Unlock()
 	if err != nil {
 		return position, err
 	}
-	a.mu.Lock()
 	a.reset()
-	a.mu.Unlock()
 	return position, nil
 }
 
@@ -135,7 +133,7 @@ func (a *Analyzer) Seek(offset int64, whence int) (int64, error) {
 func (a *Analyzer) Snapshot() Spectrum {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	return a.spectrum
+	return a.published
 }
 
 func (a *Analyzer) consume(data []byte) {
@@ -201,14 +199,15 @@ func (a *Analyzer) calculate() {
 		}
 		leftPeak, rightPeak := 0.0, 0.0
 		for bin := first; bin <= last; bin++ {
-			leftPeak = math.Max(leftPeak, cmplxAbs(a.leftCoeffs[bin])*scale)
-			rightPeak = math.Max(rightPeak, cmplxAbs(a.rightCoeffs[bin])*scale)
+			leftPeak = math.Max(leftPeak, magnitudeSquared(a.leftCoeffs[bin]))
+			rightPeak = math.Max(rightPeak, magnitudeSquared(a.rightCoeffs[bin]))
 		}
-		a.spectrum.Left[band] = smooth(a.spectrum.Left[band], normalizeDB(leftPeak))
-		a.spectrum.Right[band] = smooth(a.spectrum.Right[band], normalizeDB(rightPeak))
+		a.spectrum.Left[band] = smooth(a.spectrum.Left[band], normalizeDB(math.Sqrt(leftPeak)*scale))
+		a.spectrum.Right[band] = smooth(a.spectrum.Right[band], normalizeDB(math.Sqrt(rightPeak)*scale))
 	}
 	a.spectrum.LeftLevel = smooth(a.spectrum.LeftLevel, normalizeDB(math.Sqrt(leftRMS/fftSize)))
 	a.spectrum.RightLevel = smooth(a.spectrum.RightLevel, normalizeDB(math.Sqrt(rightRMS/fftSize)))
+	a.publish()
 }
 
 func (a *Analyzer) reset() {
@@ -221,6 +220,14 @@ func (a *Analyzer) reset() {
 	a.totalSamples = 0
 	a.carry = a.carry[:0]
 	a.spectrum = EmptySpectrum()
+	a.publish()
+}
+
+// publish keeps the UI lock independent of PCM reads and FFT work.
+func (a *Analyzer) publish() {
+	a.mu.Lock()
+	a.published = a.spectrum
+	a.mu.Unlock()
 }
 
 func normalizeDB(amplitude float64) float64 {
@@ -238,6 +245,6 @@ func smooth(previous, current float64) float64 {
 	return previous*0.80 + current*0.20
 }
 
-func cmplxAbs(value complex128) float64 {
-	return math.Hypot(real(value), imag(value))
+func magnitudeSquared(value complex128) float64 {
+	return real(value)*real(value) + imag(value)*imag(value)
 }
