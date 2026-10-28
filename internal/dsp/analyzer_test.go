@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"io"
 	"math"
+	"sync"
 	"testing"
 
 	"playerdoit/internal/audio"
@@ -99,4 +100,69 @@ func peakBand(values [bandCount]float64) int {
 
 func testConfig() audio.Config {
 	return audio.Config{SampleRate: 48_000, ChannelCount: 2, Format: audio.FormatSignedInt16LE}
+}
+
+func BenchmarkAnalyzerRead(b *testing.B) {
+	pcm := stereoTones(48_000, 48_000, 1000, 4000)
+	analyzer, err := NewAnalyzer(bytes.NewReader(pcm), testConfig())
+	if err != nil {
+		b.Fatal(err)
+	}
+	buffer := make([]byte, 4096)
+	b.ReportAllocs()
+	b.SetBytes(int64(len(pcm)))
+	b.ResetTimer()
+	for b.Loop() {
+		if _, err := analyzer.Seek(0, io.SeekStart); err != nil {
+			b.Fatal(err)
+		}
+		for {
+			if _, err := analyzer.Read(buffer); err == io.EOF {
+				break
+			} else if err != nil {
+				b.Fatal(err)
+			}
+		}
+	}
+}
+
+func TestAnalyzerConcurrentReadSeekAndSnapshot(t *testing.T) {
+	analyzer, err := NewAnalyzer(bytes.NewReader(stereoTones(48_000, fftSize*4, 1000, 4000)), testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var workers sync.WaitGroup
+	workers.Add(3)
+	go func() {
+		defer workers.Done()
+		buffer := make([]byte, 4093)
+		for i := 0; i < 200; i++ {
+			if _, err := analyzer.Read(buffer); err != nil && err != io.EOF {
+				t.Error(err)
+				return
+			}
+		}
+	}()
+	go func() {
+		defer workers.Done()
+		for i := 0; i < 200; i++ {
+			if _, err := analyzer.Seek(0, io.SeekStart); err != nil {
+				t.Error(err)
+				return
+			}
+		}
+	}()
+	go func() {
+		defer workers.Done()
+		for i := 0; i < 200; i++ {
+			spectrum := analyzer.Snapshot()
+			for band := range spectrum.Left {
+				if spectrum.Left[band] < 0 || spectrum.Left[band] > 1 || math.IsNaN(spectrum.Left[band]) {
+					t.Errorf("invalid published spectrum: %v", spectrum.Left)
+					return
+				}
+			}
+		}
+	}()
+	workers.Wait()
 }

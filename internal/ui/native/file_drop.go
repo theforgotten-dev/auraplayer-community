@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"playerdoit/internal/codecs"
+	"playerdoit/internal/player"
 )
 
 const maxDroppedFiles = 256
@@ -18,7 +18,7 @@ func acceptedDroppedAudio(paths []string) ([]string, error) {
 	accepted := make([]string, 0, len(paths))
 	seen := make(map[string]struct{}, len(paths))
 	for _, path := range paths {
-		if !codecs.IsSupported(filepath.Ext(path)) {
+		if !player.IsSupported(filepath.Ext(path)) {
 			continue
 		}
 		absolute, err := filepath.Abs(path)
@@ -33,7 +33,7 @@ func acceptedDroppedAudio(paths []string) ([]string, error) {
 		accepted = append(accepted, absolute)
 	}
 	if len(accepted) == 0 {
-		return nil, fmt.Errorf("drop one or more supported audio files")
+		return nil, fmt.Errorf("drop one or more supported audio or video files")
 	}
 	return accepted, nil
 }
