@@ -1,6 +1,6 @@
 LICENCIA PRIVATIVA - TODOS LOS DERECHOS RESERVADOS
 
-Copyright (c) 2026 Juan Pablo Muñoz Leiva (empowdered).
+Copyright (c) 2026 Juan Pablo Muñoz Leiva (theforgotten-dev).
 Todos los derechos reservados.
 
 Esta licencia se aplica al código original, la documentación y los recursos
@@ -27,4 +27,11 @@ MEDIDA PERMITIDA POR LA LEGISLACIÓN APLICABLE. EN ESA MISMA MEDIDA, EL TITULAR
 NO SERÁ RESPONSABLE DE LOS DAÑOS DERIVADOS DEL USO DEL SOFTWARE.
 
 Para solicitar una autorización, contactar con el titular a través de
-https://github.com/empowdered.
+https://github.com/theforgotten-dev.
+
+EXCEPCION PARA BINARIOS DISTRIBUIDOS OFICIALMENTE
+
+El titular concede al destinatario de una distribucion binaria autorizada
+los permisos de uso especificados en legal/EULA.es.txt o EULA.en.txt cuando
+ese acuerdo haya sido expresamente aceptado. Esta excepcion no abre el
+codigo fuente del repositorio ni limita derechos sobre componentes de terceros.

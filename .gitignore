@@ -5,4 +5,5 @@
 *.exe
 *.test
 coverage.out
+/assets/store/**/*.mp4
 .env

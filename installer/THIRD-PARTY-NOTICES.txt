@@ -1,0 +1,25 @@
+Aura Player - Third-party components
+
+Aura's original code is covered by LICENSE-Aura.txt. Third-party components
+retain their respective licenses; Aura's license does not restrict those rights.
+
+libmpv is dynamically loaded from the replaceable libmpv-2.dll beside Aura.
+This package uses the LGPL variant of the Windows build published in the
+mpv-player/mpv repository, not the GPL build used during initial development.
+The binary includes FFmpeg and other native dependencies. The upstream release
+describes this variant as LGPLv3. License texts and exact binary provenance are
+included in this directory.
+
+Upstream sources and build instructions:
+https://github.com/mpv-player/mpv/tree/703e59b0e
+https://github.com/mpv-player/mpv/blob/703e59b0e/.github/workflows/build.yml
+https://github.com/mpv-player/mpv/releases/tag/git-release
+https://ffmpeg.org/
+
+Recipients may replace/relink LGPL components and exercise their rights under
+the included licenses, including reverse engineering needed to debug changes
+to those components. Aura's restrictions do not override those permissions.
+
+Go dependency names, versions and license/copyright files are included in
+go-modules.txt and the per-module subdirectories. These include Gio, Oto,
+purego, Beep, go-mp3, nativeaudio, taglib and their dependencies.

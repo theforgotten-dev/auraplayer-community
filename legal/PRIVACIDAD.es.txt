@@ -1,0 +1,103 @@
+POLÍTICA DE PRIVACIDAD — AURA PLAYER
+Última actualización: 24 de octubre de 2026
+Aplicable a Aura Player para Windows, versión 1.2.1.
+
+1. RESPONSABLE Y CONTACTO
+El responsable de Aura Player es Juan Pablo Muñoz Leiva (theforgotten-dev),
+desarrollador independiente y persona natural. Para consultas sobre privacidad
+o para solicitar el ejercicio de sus derechos, utilice el canal de contacto
+publicado en https://github.com/theforgotten-dev. No publique información sensible
+en comentarios o incidencias públicas.
+
+2. ARCHIVOS QUE UTILIZA LA APLICACIÓN
+Aura accede a los archivos de audio, video y subtítulos que usted selecciona
+o arrastra al reproductor. Para reproducirlos puede leer su contenido, nombre,
+ruta y metadatos, como título, duración, formato y características de audio.
+También busca subtítulos asociados en la carpeta del archivo y en sus
+subcarpetas Subs o Subtitles. Estos datos se utilizan para la reproducción
+y presentación de información dentro de la aplicación.
+
+Aura no incorpora un servicio propio para subir sus archivos multimedia,
+su biblioteca o su historial de reproducción al desarrollador. La aplicación
+no requiere crear una cuenta de Aura para reproducir archivos locales.
+
+3. PREFERENCIAS GUARDADAS EN SU EQUIPO
+Aura guarda localmente ajustes de volumen, silencio, subtítulos, idioma,
+controles e interfaz, además de la apariencia elegida. Se conservan en archivos
+de configuración del perfil de Windows de la aplicación. En una instalación
+tradicional suelen encontrarse en %APPDATA%\playerdoit; en una instalación
+MSIX, Windows puede administrar o redirigir la ubicación correspondiente.
+
+La versión indicada no incorpora servicios propios de publicidad,
+seguimiento publicitario, analítica de uso o envío automático de informes
+de errores al desarrollador. Esto no describe ni controla los diagnósticos
+independientes de Windows, Microsoft Store u otros servicios de su equipo.
+
+4. MICROSOFT STORE Y OTROS SERVICIOS
+Si adquiere Aura mediante Microsoft Store, Microsoft trata los datos de su
+cuenta, compra, pago, instalación y servicios de la tienda según sus propios
+términos y su Declaración de privacidad: https://privacy.microsoft.com/.
+Aura no solicita ni procesa dentro del reproductor el número de su tarjeta
+ni sus credenciales bancarias. El editor puede acceder a información comercial
+que Microsoft facilite mediante sus herramientas de publicación; su alcance
+depende de esos servicios y de la configuración de la cuenta del editor.
+
+Si abre archivos desde unidades de red, ubicaciones sincronizadas o contenidos
+con referencias externas, los sistemas o servicios implicados pueden generar
+conexiones y tratar datos técnicos según su funcionamiento. La aplicación
+utiliza componentes multimedia de terceros para decodificar los archivos;
+su inclusión no constituye por sí sola un servicio de envío al desarrollador.
+
+5. SOLICITUDES DE SOPORTE
+Si contacta voluntariamente al desarrollador, la información que facilite
+—por ejemplo, nombre de contacto, descripción del fallo, capturas o registros—
+podrá utilizarse para responder, investigar problemas y atender obligaciones
+legales. Envíe solo lo necesario y retire datos personales de terceros,
+credenciales y rutas sensibles. No envíe películas u otros archivos protegidos
+sin autorización. La plataforma que utilice para contactar puede tratar esos
+datos conforme a su propia política y mostrarlos públicamente si usted elige
+un canal público.
+
+6. FINALIDADES Y COMUNICACIÓN DE DATOS
+Los datos se utilizan para prestar las funciones solicitadas, conservar sus
+preferencias, atender comunicaciones voluntarias y cumplir obligaciones
+legales aplicables. Esta política no solicita un consentimiento general para
+otros usos. Cuando una actividad requiera consentimiento o una información
+adicional, deberán solicitarse antes de efectuarla.
+
+La aplicación no incorpora funciones de venta de datos personales ni de
+cesión a redes publicitarias. Las comunicaciones que usted realice por
+servicios externos se rigen también por esos servicios. Podría comunicarse
+información recibida en soporte cuando resulte legalmente exigible o necesario
+para atender su solicitud mediante un proveedor, con las garantías aplicables.
+
+7. CONSERVACIÓN Y CONTROLES
+Las preferencias locales permanecen hasta que usted las cambie o elimine,
+o hasta que Windows o el mecanismo de desinstalación eliminen los datos
+correspondientes. No se garantiza que toda forma de desinstalación borre las
+preferencias. Puede cerrar Aura y eliminar sus archivos de configuración para
+restablecer los ajustes, sin borrar sus archivos multimedia originales.
+
+La información recibida para soporte se conservará mientras sea necesaria
+para atender la solicitud y durante los plazos adicionales que correspondan
+por obligaciones legales o defensa de reclamaciones. Puede solicitar su
+supresión, sin perjuicio de esas obligaciones y de las reglas del servicio
+externo donde usted la haya publicado.
+
+8. DERECHOS Y SEGURIDAD
+Según la legislación aplicable, puede solicitar acceso, rectificación,
+supresión u otros derechos respecto de datos personales que el desarrollador
+mantenga sobre usted. Contacte por el canal de la sección 1 indicando su
+solicitud, sin enviar documentos de identidad de forma pública. Los datos
+gestionados exclusivamente por Microsoft u otra plataforma deben solicitarse
+también al responsable correspondiente.
+
+La configuración local está sujeta a los permisos y protecciones de su perfil
+de Windows. No se afirma que esos archivos estén cifrados por Aura ni que exista
+seguridad absoluta. Mantenga su equipo actualizado y proteja su cuenta.
+
+9. CAMBIOS
+Si cambian las funciones o prácticas de tratamiento, se actualizará esta
+política y se informará de los cambios que legalmente lo requieran. Una
+actualización del texto no autoriza retroactivamente usos incompatibles ni
+sustituye el consentimiento cuando sea necesario.

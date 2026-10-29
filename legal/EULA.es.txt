@@ -1,0 +1,150 @@
+AURA PLAYER — ACUERDO DE LICENCIA DE USUARIO FINAL
+Versión del acuerdo: 2026-10-24.2
+Texto propuesto para revisión jurídica antes de publicación.
+
+RESUMEN: Aura es un reproductor multimedia. Usted debe contar con los
+derechos necesarios sobre sus contenidos. Este acuerdo limita determinadas
+garantías y responsabilidades únicamente cuando la ley lo permite. Conserva
+sus derechos irrenunciables. Lea el texto completo antes de aceptar.
+
+1. PARTES Y ACEPTACIÓN
+El licenciante del código original de Aura Player es Juan Pablo Muñoz Leiva
+(theforgotten-dev), persona natural, identificado en LICENSE-Aura.txt. Contacto actualmente publicado:
+https://github.com/theforgotten-dev. Este acuerdo regula su relación con el usuario
+de una copia obtenida de una distribución autorizada.
+
+La aceptación requiere una acción expresa que identifique este acuerdo,
+como seleccionar «Acepto el acuerdo» en el instalador. El silencio, descargar
+un archivo o leer esta copia no constituyen por sí solos aceptación. Si no
+acepta, cancele la instalación y no utilice el código original de Aura bajo
+esta licencia. Esto no restringe derechos independientes sobre terceros.
+Quien acepte por una organización debe tener facultades para representarla.
+Quien no tenga capacidad para contratar debe actuar mediante su representante
+legal en los casos exigidos por la legislación aplicable.
+
+2. LICENCIA DE USO Y TITULARIDAD
+Sujeto a este acuerdo, el licenciante autoriza una licencia no exclusiva para
+instalar y ejecutar el binario original en equipos que usted controle, con
+fines lícitos personales o internos de su organización, y conservar una copia
+de respaldo. Este acuerdo no establece por sí solo precio, suscripción ni
+cobros futuros. Cualquier condición comercial adicional debe comunicarse y
+aceptarse separadamente antes de contratar. Aura se proyecta como aplicación
+de pago distribuida mediante Microsoft Store. El precio, moneda, impuestos,
+alcance temporal de la compra y cualquier prueba o suscripción deben constar
+en la oferta de la tienda antes de confirmar el pago. Este borrador no
+establece una suscripción, actualizaciones perpetuas ni servicios futuros.
+
+Para una adquisición por Microsoft Store, se respetan las condiciones
+aplicables de la tienda sobre adquisición, dispositivos, reinstalación,
+pagos y solicitudes de reembolso, junto con los derechos legales del usuario.
+Este EULA no modifica la relación contractual independiente con Microsoft ni
+presenta a Microsoft como autor de Aura o responsable de su soporte técnico.
+Las condiciones de licencia propias deben estar disponibles antes de la
+compra y aceptarse de forma válida; una pantalla posterior al pago no se
+considera por sí sola aceptación previa. Si no se proporcionan condiciones
+propias válidamente aplicables, habrá que determinar las condiciones estándar
+de licencia de la tienda que correspondan. Los derechos imperativos prevalecen
+en todo caso, incluido cualquier derecho de retracto o devolución aplicable.
+
+Se reservan los derechos sobre el código, marcas y recursos originales que
+legalmente correspondan al licenciante. No se concede acceso al código fuente
+original ni autorización general para vender, sublicenciar, redistribuir o
+crear derivados de ese código. No se permite eliminar avisos de titularidad.
+Estas restricciones ceden ante derechos legales obligatorios y las licencias
+de terceros. No se prohíbe ingeniería inversa permitida imperativamente por
+ley, ni la necesaria para ejercer derechos de reemplazo, modificación o
+depuración de componentes LGPL en los términos de sus licencias.
+
+3. CONTENIDOS Y USO LÍCITO
+Usted elige los archivos y subtítulos y debe comprobar que su acceso, uso y
+eventual exhibición cuentan con autorización o una excepción legal aplicable.
+La licencia del reproductor no concede derechos sobre películas, música,
+subtítulos, marcas de terceros ni comunicación pública de obras.
+
+No utilice Aura para infringir derechos de autor o privacidad, acceder sin
+autorización a sistemas o contenidos, distribuir material ilícito, introducir
+código malicioso o eludir medidas tecnológicas cuando esté prohibido por ley.
+Se conservan las excepciones legales. La reproducción técnicamente posible
+de un archivo no certifica la legitimidad de su procedencia ni de su uso.
+El usuario responde por sus propios actos ilícitos conforme a la ley; esta
+cláusula no traslada responsabilidades imputables al licenciante al usuario.
+
+4. SEGURIDAD Y ALCANCE FUNCIONAL
+Use copias de seguridad y archivos de procedencia confiable. Los archivos
+multimedia pueden estar dañados o contener entradas maliciosas. Mantenga el
+sistema y el software actualizados y ajuste el volumen para evitar lesiones.
+Aura no está destinado a usos en que un fallo pueda comprometer vidas,
+salud, infraestructura crítica o sistemas de emergencia.
+
+La compatibilidad depende del contenedor, códec, archivo, hardware y versión.
+La lista de extensiones no garantiza que todo archivo pueda reproducirse.
+No se promete soporte universal, descifrado de DRM, disponibilidad continua,
+ausencia de fallos ni inmunidad frente a archivos hostiles. Esto no reduce
+prestaciones expresamente ofrecidas, garantías legales o deberes de seguridad.
+
+5. GARANTÍAS
+EN LA MEDIDA EN QUE LA LEY APLICABLE LO PERMITA, EL SOFTWARE SE ENTREGA
+«TAL CUAL» Y «SEGÚN DISPONIBILIDAD», SIN GARANTÍAS VOLUNTARIAS IMPLÍCITAS DE
+COMERCIABILIDAD, IDONEIDAD PARA UN PROPÓSITO PARTICULAR O NO INFRACCIÓN.
+ESTA EXCLUSIÓN NO AFECTA GARANTÍAS EXPRESAS VÁLIDAMENTE OTORGADAS, PRESTACIONES
+COMPROMETIDAS NI GARANTÍAS O RECURSOS LEGALES QUE NO PUEDAN EXCLUIRSE.
+
+6. RESPONSABILIDAD Y EXCEPCIONES
+Cuando la legislación lo admita, se excluyen daños indirectos, especiales,
+incidentales y consecuenciales, incluido lucro cesante, derivados del uso
+del software. No se excluyen daños directos por esta cláusula ni se fija un
+tope monetario general frente a consumidores.
+
+Ninguna exclusión de este acuerdo se aplica a dolo, fraude, culpa grave,
+daños personales o muerte imputables al licenciante, infracciones propias de
+deberes legales inderogables, ni a otros casos en que la ley prohíba limitar
+responsabilidad. No se renuncia a reparación, reembolso, indemnización,
+acciones colectivas ni demás recursos que legalmente correspondan.
+Las exclusiones solo operan dentro de su ámbito lícito; una fórmula general
+no transforma una cláusula abusiva en válida. Un tribunal competente podrá
+dejar sin efecto las estipulaciones que no procedan.
+
+7. COMPONENTES DE TERCEROS
+Las bibliotecas, códecs, tipografías y demás materiales ajenos conservan sus
+licencias y avisos, incluidos en licenses. En caso de conflicto respecto de
+esos componentes, prevalece su licencia correspondiente. Este acuerdo no
+limita permisos LGPL ni impone obligaciones adicionales al ejercicio de
+derechos concedidos por las licencias de terceros. Tampoco sustituye las
+obligaciones de distribución o entrega de fuentes que esas licencias exijan.
+
+8. DURACIÓN Y TERMINACIÓN
+Puede terminar esta licencia dejando de utilizar y eliminando el código
+original licenciado, sin afectar copias cuya conservación permita la ley.
+El licenciante podrá resolverla por un incumplimiento sustancial atribuible
+al usuario, previa notificación y oportunidad razonable de subsanar cuando
+proceda. No se autoriza acceso remoto, borrado de sus archivos ni bloqueo
+arbitrario de prestaciones pagadas. La terminación no suprime derechos
+adquiridos, reclamos existentes ni derechos independientes sobre terceros.
+
+9. CHILE, ESTADOS UNIDOS Y OTROS TERRITORIOS
+Se propone la ley de Chile para este acuerdo, sin privar al usuario de la
+protección imperativa que le corresponda por su residencia o por otras
+reglas aplicables. En Chile se preservan, cuando correspondan, los derechos
+de la Ley N.º 19.496 y las excepciones de la Ley N.º 17.336.
+En Estados Unidos pueden existir derechos y garantías adicionales bajo
+leyes federales o de cada estado; algunas exclusiones anteriores pueden
+no ser aplicables. No se afirma que este acuerdo sea válido uniformemente
+en todos los estados ni países.
+
+Los conflictos se someten a los tribunales competentes según la ley. No se
+impone arbitraje, foro extranjero exclusivo, renuncia a acciones colectivas
+ni requisito de reclamar primero al licenciante para acudir a una autoridad.
+Puede comunicarnos incidencias por el contacto indicado, sin suspender ni
+reducir sus plazos y derechos legales.
+
+10. CAMBIOS, COPIA E INTEGRIDAD
+Conserve este acuerdo y las licencias incluidas. Una nueva versión no modifica
+retroactivamente la ya aceptada; cambios sustanciales requieren nueva
+aceptación cuando corresponda. La nulidad de una disposición no afecta las
+restantes si legalmente pueden subsistir. Las versiones en español e inglés
+buscan expresar las mismas condiciones; prevalecen las reglas de idioma e
+interpretación imperativas y la interpretación favorable al consumidor que
+corresponda. No se impone una prevalencia lingüística que suprima derechos.
+
+El EULA no es una exención de responsabilidad penal o administrativa ni
+obliga a terceros ajenos al contrato. No concede inmunidad al licenciante.
