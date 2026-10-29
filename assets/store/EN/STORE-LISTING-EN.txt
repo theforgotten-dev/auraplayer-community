@@ -1,0 +1,141 @@
+AURA-PLAYER — MICROSOFT STORE LISTING — ENGLISH
+Copy the text below each heading into the corresponding Partner Center field.
+For product features and keywords, add each numbered item separately without
+copying its number.
+
+============================================================
+PRODUCT NAME
+============================================================
+Aura-Player
+
+============================================================
+DESCRIPTION
+============================================================
+Aura-Player brings your local music and videos together in one player for Windows.
+
+Play popular audio formats such as MP3, FLAC, WAV, AAC, M4A and Opus, and video containers such as MP4, MKV, AVI and WebM.
+
+Load SRT, ASS, SSA and VTT subtitles, switch between available subtitle tracks and customize your playback preferences. Aura can also detect associated subtitle files alongside your video and in Subs or Subtitles folders.
+
+Enjoy fullscreen video with floating controls that automatically hide during playback and reappear when you move the mouse. Open files through the file picker or drag and drop them into the player.
+
+Key features:
+• Local audio and video playback.
+• Live spectrum visualization for supported audio playback.
+• Subtitle loading, detection and track selection.
+• Play, pause, seek and volume controls.
+• Fullscreen playback with floating controls.
+• Saved playback and interface preferences.
+• Drag-and-drop file opening.
+
+Keyboard shortcuts:
+• F11, Alt+Enter or double-click the video: toggle fullscreen.
+• Esc: close preferences or exit fullscreen.
+• Ctrl+P: open preferences.
+
+Compatibility depends on each file's codecs and characteristics. Aura-Player does not include movies, music or subtitles, and does not decrypt DRM-protected content.
+
+============================================================
+SHORT DESCRIPTION
+============================================================
+Play local audio and video with subtitles, a live audio spectrum and fullscreen controls.
+
+============================================================
+PRODUCT FEATURES — ONE ITEM PER FIELD
+============================================================
+1. Play local audio and video files.
+
+2. Supports popular formats such as MP3, FLAC, WAV, MP4 and MKV, depending on the file's codecs.
+
+3. Load SRT, ASS, SSA and VTT subtitles.
+
+4. Detect associated subtitle files and switch between available tracks.
+
+5. Enjoy fullscreen video with floating playback controls.
+
+6. View a live spectrum during supported audio playback.
+
+7. Open files through the file picker or drag and drop.
+
+8. Save your playback and interface preferences.
+
+============================================================
+WHAT'S NEW IN THIS VERSION
+============================================================
+Leave this field empty for the first public release.
+The earlier rejected submission was not a public release.
+
+============================================================
+KEYWORDS — ADD EACH SEPARATELY AND PRESS ENTER
+============================================================
+1. media player
+2. audio player
+3. video player
+4. music
+5. subtitles
+6. local files
+7. fullscreen
+
+============================================================
+COPYRIGHT AND TRADEMARK INFORMATION
+============================================================
+© 2026 Juan Pablo Muñoz Leiva. All rights reserved in the original components of Aura-Player. Third-party components retain their respective licenses and copyright notices.
+
+============================================================
+ADDITIONAL LICENSE TERMS
+============================================================
+Leave this field empty for now. Do not paste this instruction into the field.
+The custom EULA is still a draft awaiting legal review. This instruction does
+not finalize or supersede the draft license files already included in the package.
+
+============================================================
+DEVELOPED BY
+============================================================
+Juan Pablo Muñoz Leiva
+
+============================================================
+VOICE TITLE — OPTIONAL
+============================================================
+Aura Player
+
+============================================================
+TRAILER TITLE
+============================================================
+Aura Player — Audio, video and subtitles
+
+============================================================
+FILES — DO NOT PASTE THESE PATHS INTO THE DESCRIPTION
+============================================================
+Current package:
+E:\proys\playerdoit\dist\Aura-Player-Store-1.2.3.0-x64.msix
+
+English Store artwork and trailer files:
+E:\proys\playerdoit\assets\store\EN
+
+Trailer for Store:
+E:\proys\playerdoit\assets\store\EN\aura-trailer-store-1080p-en-subs-v2.mp4
+
+Trailer thumbnail:
+E:\proys\playerdoit\assets\store\EN\aura-trailer-thumbnail-1920x1080-en-subs-v2.png
+
+Optional trailer captions:
+E:\proys\playerdoit\assets\store\EN\aura-trailer-captions-v2.vtt
+
+Screenshot:
+E:\proys\playerdoit\assets\store\EN\aura-screenshot-audio-1366x768.png
+
+============================================================
+REMAINING INFORMATION — DO NOT PASTE THESE INSTRUCTIONS
+============================================================
+Privacy policy URL: enter the actual publicly accessible URL where the
+privacy policy is hosted. A local file path is not a public privacy URL.
+
+Support contact: enter a working public support URL or email address.
+No public email address has been supplied for this listing.
+
+Pricing and markets: configure these in Partner Center.
+
+The trailer shows real recordings of Aura 1.2.2. Its preferences panel remains
+in Spanish even in the trailer with English titles. The screenshots show the
+current mixed-language interface. English listing text does not establish
+that every application screen is fully localized into English.
