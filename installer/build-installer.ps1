@@ -20,7 +20,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Tests failed." }
     & go vet ./...
     if ($LASTEXITCODE -ne 0) { throw "go vet failed." }
-    & go run github.com/tc-hib/go-winres@v0.3.3 simply --arch amd64,arm64 --out rsrc --manifest gui --icon assets/aura-icon.png --product-name "Aura Player" --file-description "Aura Player - Audio y video" --original-filename "aura-native.exe" --product-version $Version --file-version $Version
+    & go run github.com/tc-hib/go-winres@v0.3.3 simply --arch amd64,arm64 --out rsrc --manifest gui --icon assets/aura-icon.png --product-name "Aura Player Community" --file-description "Aura Player Community - Audio y video" --original-filename "aura-native.exe" --product-version $Version --file-version $Version
     if ($LASTEXITCODE -ne 0) { throw "Windows resource generation failed." }
     Write-Output "Building standard Go executable (no obfuscation)."
     & go build -trimpath -ldflags "-H=windowsgui" -o $executable .
@@ -39,6 +39,7 @@ try {
     $legalDir = Join-Path $packageDir "legal"
     New-Item -ItemType Directory -Force -Path $legalDir | Out-Null
     Copy-Item -Path (Join-Path $repoRoot "legal\*.txt") -Destination $legalDir -Force
+    Copy-Item -LiteralPath (Join-Path $repoRoot "legal\COMMUNITY-LICENSE.md") -Destination $legalDir
     $licenseDir = Join-Path $packageDir "licenses"
     New-Item -ItemType Directory -Force -Path $licenseDir | Out-Null
     Copy-Item -LiteralPath (Join-Path $runtimeDir "LICENSE.LGPL") -Destination (Join-Path $licenseDir "libmpv-LGPL-2.1.txt")
@@ -76,13 +77,13 @@ if (-not $compiler) {
 if (-not $compiler) { throw "Inno Setup 6 was not found." }
 & $compiler "/DAppVersion=$Version" "/DSourceDir=$packageDir" "/O$outputDir" (Join-Path $PSScriptRoot "aura.iss")
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
-$installer = Join-Path $outputDir "Aura-Player-Setup-$Version.exe"
+$installer = Join-Path $outputDir "Aura-Player-Community-Setup-$Version.exe"
 if (-not (Test-Path -LiteralPath $installer)) { throw "Installer was not created." }
-$portableArchive = Join-Path $outputDir "Aura-Player-Portable-$Version.zip"
+$portableArchive = Join-Path $outputDir "Aura-Player-Community-Portable-$Version.zip"
 $portableFiles = @("aura-native.exe","libmpv-2.dll","LEEME.txt","LICENSE-Aura.txt","FORMATS.json","licenses","legal") | ForEach-Object { Join-Path $packageDir $_ }
 Compress-Archive -Path $portableFiles -DestinationPath $portableArchive -Force
 Get-FileHash -LiteralPath $installer,$portableArchive -Algorithm SHA256 | ForEach-Object {
     "$($_.Hash.ToLower())  $(Split-Path -Leaf $_.Path)"
-} | Set-Content -Encoding ASCII (Join-Path $outputDir "Aura-Player-$Version-SHA256.txt")
+} | Set-Content -Encoding ASCII (Join-Path $outputDir "Aura-Player-Community-$Version-SHA256.txt")
 Write-Output "Installer: $installer"
 Write-Output "Portable: $portableArchive"

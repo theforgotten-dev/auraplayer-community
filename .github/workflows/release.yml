@@ -1,0 +1,119 @@
+name: Community Windows release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (for example 0.1.0); creates a draft release'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.event.inputs.version || github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      commit: ${{ steps.version.outputs.commit }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate version and source
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $version = if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') { $env:INPUT_VERSION } else { $env:GITHUB_REF_NAME -replace '^v', '' }
+          if ($version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') { throw 'Use a numeric semantic version.' }
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch' -and $env:GITHUB_REF -ne 'refs/heads/dev') { throw 'Manual releases must run from dev.' }
+          git merge-base --is-ancestor HEAD origin/dev
+          if ($LASTEXITCODE -ne 0) { throw 'Release commit must belong to dev history.' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "commit=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Locate Inno Setup
+        run: |
+          $compiler = 'C:\Program Files (x86)\Inno Setup 6'
+          if (-not (Test-Path "$compiler\ISCC.exe")) { throw 'Inno Setup 6 is required on the runner.' }
+          $compiler >> $env:GITHUB_PATH
+      - name: Download and verify Go modules
+        run: |
+          go mod download
+          if ($LASTEXITCODE -ne 0) { throw 'Module download failed.' }
+          go mod verify
+          if ($LASTEXITCODE -ne 0) { throw 'Module verification failed.' }
+      - name: Build, test and package
+        run: ./installer/build-installer.ps1 -Version '${{ steps.version.outputs.version }}'
+      - name: Verify isolated installation
+        run: ./installer/verify-installer.ps1 -Version '${{ steps.version.outputs.version }}'
+      - name: Bundle exact project and Go dependency sources
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $source = Join-Path $env:RUNNER_TEMP 'community-source'
+          New-Item -ItemType Directory -Path $source | Out-Null
+          git archive --format=zip -o "$env:RUNNER_TEMP\project.zip" HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Source archive failed.' }
+          Expand-Archive "$env:RUNNER_TEMP\project.zip" $source
+          go mod vendor -o "$source\vendor"
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency source export failed.' }
+          Copy-Item build/release-runtime/runtime-manifest.json "$source\runtime-manifest.json"
+          Compress-Archive "$source\*" "dist/Aura-Player-Community-Source-$version.zip"
+          @{ version=$version; commit='${{ steps.version.outputs.commit }}'; go=(& go version); runner=$env:ImageVersion; signed=$false; runtimeSourceAudit='pending' } | ConvertTo-Json | Set-Content "dist/Aura-Player-Community-$version-build.json"
+          Get-ChildItem dist -File | Where-Object Name -ne "Aura-Player-Community-$version-SHA256.txt" | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path -Leaf $_.Path)" } | Set-Content -Encoding ascii "dist/Aura-Player-Community-$version-SHA256.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: community-windows-${{ steps.version.outputs.version }}
+          path: dist/Aura-Player-Community-*
+          if-no-files-found: error
+          retention-days: 7
+      - name: Preserve installation logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installer-verification-${{ github.run_id }}
+          path: build/installer-smoke/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: community-windows-${{ needs.build.outputs.version }}
+          path: release
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.build.outputs.version }}
+          COMMIT: ${{ needs.build.outputs.commit }}
+        run: |
+          cat > notes.md <<EOF
+          First Community build for Windows x64, version $VERSION.
+
+          Source commit: $COMMIT. Original project code: GPL-3.0-only.
+          Includes installer, portable ZIP, project and Go dependency sources, build metadata and SHA-256 checksums.
+
+          Automated checks: Go tests, go vet, build, isolated installer payload verification.
+          Audio/video playback on a physical device has not been validated by this pipeline.
+          Executables are unsigned; SignPath approval/signing is not configured.
+
+          DRAFT: review native runtime corresponding sources and all third-party distribution obligations before public publication. The source ZIP contains project and Go dependency sources, not the complete native multimedia dependency sources.
+          EOF
+          gh release create "v$VERSION" release/* --target "$COMMIT" --draft --prerelease --title "Aura Player Community $VERSION" --notes-file notes.md

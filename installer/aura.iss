@@ -1,4 +1,4 @@
-#define AppName "Aura Player"
+#define AppName "Aura Player Community"
 #define AppPublisher "Aura"
 #define AppExeName "aura-native.exe"
 
@@ -14,20 +14,20 @@
 #ifdef SmokeTest
 AppId={{A30BC8B7-C6EE-4D84-B6EB-64093E42AA37}
 #else
-AppId={{49C3D748-0C18-4FEA-83CA-87923184ECA6}}
+AppId={{C5F4EE6B-1E84-41C1-997C-C77500EC071B}}
 #endif
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
-DefaultDirName={localappdata}\Programs\Aura Music Player
+DefaultDirName={localappdata}\Programs\Aura Player Community
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 OutputDir=..\dist
-OutputBaseFilename=Aura-Player-Setup-{#AppVersion}
+OutputBaseFilename=Aura-Player-Community-Setup-{#AppVersion}
 VersionInfoVersion={#AppVersion}
-VersionInfoDescription=Aura Player - Audio, video y subtitulos
+VersionInfoDescription=Aura Player Community - Audio, video y subtitulos
 SetupIconFile=..\build\branding\aura.ico
 ChangesAssociations=yes
 MinVersion=10.0.17763
@@ -60,8 +60,8 @@ Source: "{#SourceDir}\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversi
 Source: "{#SourceDir}\legal\*"; DestDir: "{app}\legal"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Aura Player"; Filename: "{app}\{#AppExeName}"
-Name: "{autodesktop}\Aura Player"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
+Name: "{group}\Aura Player Community"; Filename: "{app}\{#AppExeName}"
+Name: "{autodesktop}\Aura Player Community"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Registry]
 #include SourceDir + "\file-associations.iss"
