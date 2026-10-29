@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Aura Music Player
+GenericName=Audio Player
+Comment=Modular GPU-rendered audio player
+Exec=aura-player %F
+Icon=aura-player
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+MimeType=audio/mpeg;audio/x-wav;audio/flac;audio/ogg;audio/mp4;audio/aac;audio/x-ms-wma;
+Keywords=audio;music;player;mp3;flac;ogg;wav;
+StartupNotify=true
+StartupWMClass=Aura Music Player
