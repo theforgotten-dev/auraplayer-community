@@ -1,7 +1,7 @@
 AURA PLAYER — USO RESPONSABLE / RESPONSIBLE USE
 
-Esta guía acompaña al EULA; no sustituye sus términos ni la ley.
-This guide accompanies the EULA and does not replace it or applicable law.
+Guía informativa: no añade restricciones a GPL-3.0-only ni a licencias de terceros.
+Informational guidance: no additional restrictions on GPL-3.0-only or third-party licenses.
 
 - Reproduzca únicamente contenido cuyo uso esté autorizado o permitido por ley.
   Play only content whose use is authorized or legally permitted.

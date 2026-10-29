@@ -1,29 +1,21 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: aura-player
-Source: https://github.com/theforgotten-dev/auraplayer
+Upstream-Name: aura-player-community
+Source: https://github.com/theforgotten-dev/auraplayer-community
 
 Files: *
 Copyright: 2026 Juan Pablo Muñoz Leiva (theforgotten-dev)
-License: proprietary
- This is proprietary software. Copyright (c) 2026 Juan Pablo Muñoz Leiva
- (theforgotten-dev). All rights reserved.
+License: GPL-3
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, version 3 of the License only.
  .
- No permission is granted to use, copy, modify, publish, distribute,
- sublicense, sell or create derivative works of these materials without the
- prior written authorisation of the copyright holder. Any permission granted
- separately is limited to the terms of that authorisation.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
  .
- The software is provided "as is", without warranty of any kind, to the extent
- permitted by applicable law. To the same extent, the holder is not liable for
- damages arising from the use of the software.
+ On Debian systems, the complete text is available at
+ /usr/share/common-licenses/GPL-3.
  .
- To request authorisation, contact the holder at
- https://github.com/theforgotten-dev.
- .
- Third-party dependencies keep their own licenses and copyright notices. This
- license does not replace, restrict or relicense those components.
-
-Files: debian/*
-Copyright: 2026 Juan Pablo Muñoz Leiva (theforgotten-dev)
-License: proprietary
- See the license above.
+ Third-party components retain their own licenses and notices.
+ This stanza covers original project materials only.

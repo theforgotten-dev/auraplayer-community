@@ -16,7 +16,7 @@ if (-not (Test-Path -LiteralPath $compiler)) {
 & $compiler "/DSmokeTest=1" "/DAppVersion=$Version" "/DSourceDir=$package" "/O$testRoot" "/FAura-Player-Smoke" (Join-Path $PSScriptRoot "aura.iss") | Set-Content (Join-Path $testRoot "compile.log")
 if ($LASTEXITCODE -ne 0) { throw "Smoke installer compilation failed." }
 $setup = Join-Path $testRoot "Aura-Player-Smoke.exe"
-$arguments = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/NOICONS','/ACCEPTEULA=2026-10-24.2','/TASKS=""',('/DIR="' + $installDir + '"'),('/LOG="' + (Join-Path $testRoot "install.log") + '"'))
+$arguments = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/NOICONS','/TASKS=""',('/DIR="' + $installDir + '"'),('/LOG="' + (Join-Path $testRoot "install.log") + '"'))
 $install = Start-Process -FilePath $setup -ArgumentList $arguments -WindowStyle Hidden -Wait -PassThru
 if ($install.ExitCode -ne 0) { throw "Test installation failed: $($install.ExitCode)." }
 foreach ($file in @("aura-native.exe","libmpv-2.dll","LEEME.txt","LICENSE-Aura.txt","licenses\runtime-manifest.json","legal\EULA.es.txt","legal\EULA.en.txt","legal\USO-RESPONSABLE.txt")) {
