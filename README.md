@@ -1,8 +1,10 @@
-# playerdoit
+# Aura Player
 
 ## Licencia
 
-Software privativo. Copyright (c) 2026 Juan Pablo Muñoz Leiva (empowdered).
+Repositorio: https://github.com/theforgotten-dev/auraplayer
+
+Software privativo. Copyright (c) 2026 Juan Pablo Muñoz Leiva (theforgotten-dev).
 Todos los derechos reservados. El uso, la copia, la modificación y la
 distribución requieren autorización previa y por escrito. Consulta [LICENSE](LICENSE).
 Las dependencias y los materiales de terceros conservan sus propias licencias.
@@ -12,6 +14,17 @@ Reproductor de audio modular escrito en Go. Usa Oto v3 como motor PCM,
 renderizada directamente por GPU. No utiliza WebView, HTML ni JavaScript.
 
 ## Aura Desktop
+
+La versión instalable 1.2.0 amplía el audio a 55 extensiones mediante el motor
+multimedia incluido. Consulta la [lista de formatos y límites comprobados](docs/audio-formats.md).
+
+Aura también reproduce video con imagen y audio sincronizados dentro de la
+ventana, usando libmpv en Windows. Acepta MP4, MKV, WebM, AVI, MOV, M4V,
+MPG, MPEG y WMV en la misma cola que los archivos de audio.
+Los controles `+ SUBS` y `CC ON/OFF` permiten cargar SRT, ASS, SSA o VTT y
+mostrarlos u ocultarlos. Los subtítulos con el mismo nombre del video se
+cargan automáticamente. Consulta [preparación y pruebas de video](docs/video-playback.md)
+para instalar el runtime local y compilar esta versión.
 
 La aplicación permite agregar archivos MP3, WAV, FLAC, OGG Vorbis, AAC, M4A y
 WMA mediante el selector nativo del sistema o arrastrándolos desde Explorer
@@ -43,12 +56,15 @@ barra de tareas.
 Para compilar el instalador de Windows x64 se requiere Inno Setup 6:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\installer\build-installer.ps1 -Version 1.0.0
+powershell -ExecutionPolicy Bypass -File .\installer\build-installer.ps1 -Version 1.2.0
 ```
 
-El instalador queda en `dist/Aura-Music-Player-Setup-1.0.0.exe`, instala Aura
+El instalador queda en `dist/Aura-Player-Setup-1.2.0.exe`, instala Aura
 solo para el usuario actual y ofrece crear accesos directos y asociar los
-formatos de audio compatibles. La configuración personal de skins no se
+formatos de audio y video compatibles mediante «Abrir con». Incluye libmpv LGPL,
+preferencias, subtítulos, pantalla completa y avisos de terceros; no necesita
+descargar el motor durante la instalación. También genera un ZIP portable y
+un archivo de comprobaciones SHA-256 en `dist`. La configuración personal no se
 elimina al desinstalar.
 
 Todas las pistas se normalizan por streaming a PCM estéreo de 48 kHz antes de
