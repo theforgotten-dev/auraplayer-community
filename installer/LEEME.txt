@@ -21,7 +21,7 @@ El desinstalador conserva las preferencias personales.
 
 Las licencias de Aura y de terceros se incluyen en este directorio y en licenses.
 
-Los acuerdos propuestos en espanol e ingles y la guia de uso responsable
-estan en legal. El instalador interactivo presenta el EULA antes de instalar.
-El portable incluye los textos, pero aun no incorpora una pantalla propia
-de aceptacion: su mera descarga o ejecucion no acredita consentimiento.
+Community es software libre bajo GPL-3.0-only. LICENSE-Aura.txt contiene
+la licencia completa; legal incluye avisos en espanol e ingles. No hay un
+EULA propietario adicional. Las dependencias conservan sus propias licencias.
+Fuentes: https://github.com/theforgotten-dev/auraplayer-community

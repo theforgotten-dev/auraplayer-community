@@ -76,11 +76,5 @@ Filename: "{app}\{#AppExeName}"; Description: "Iniciar Aura Player"; Flags: post
 function InitializeSetup(): Boolean;
 begin
   Result := True;
-  // Silent deployment must not silently bypass the agreement page.
-  // This flag is an administrator assertion, not proof of end-user assent.
-  if WizardSilent and (ExpandConstant('{param:ACCEPTEULA|}') <> '2026-10-24.2') then
-  begin
-    Log('Silent setup requires prior EULA acceptance and /ACCEPTEULA=2026-10-24.2');
-    Result := False;
-  end;
+  // GPL-3.0-only: running Community does not require EULA assent.
 end;

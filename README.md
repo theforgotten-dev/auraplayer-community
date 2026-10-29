@@ -1,12 +1,20 @@
-# Aura Player
+# Aura Player Community
 
 ## Licencia
 
-Repositorio: https://github.com/theforgotten-dev/auraplayer
+Repositorio: https://github.com/theforgotten-dev/auraplayer-community
 
-Software privativo. Copyright (c) 2026 Juan Pablo Muñoz Leiva (theforgotten-dev).
-Todos los derechos reservados. El uso, la copia, la modificación y la
-distribución requieren autorización previa y por escrito. Consulta [LICENSE](LICENSE).
+Copyright (c) 2026 Juan Pablo Muñoz Leiva (theforgotten-dev).
+
+El código y los materiales originales de Community se distribuyen bajo
+**GNU General Public License, versión 3 únicamente (GPL-3.0-only)**.
+Puedes usar, estudiar, modificar y redistribuir el proyecto, incluso con fines
+comerciales, cumpliendo la GPL. Al distribuir versiones modificadas debes
+mantener esta licencia y facilitar el código fuente correspondiente según
+sus términos. No se exige publicar modificaciones de uso privado.
+Consulta [LICENSE](LICENSE) y la [guía de licencia](legal/COMMUNITY-LICENSE.md).
+El software se ofrece sin garantía, según la GPL. Este cambio corresponde
+exclusivamente a Community; no modifica la licencia de la edición comercial.
 Las dependencias y los materiales de terceros conservan sus propias licencias.
 
 Reproductor de audio modular escrito en Go. Usa Oto v3 como motor PCM,

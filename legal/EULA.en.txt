@@ -1,145 +1,19 @@
-AURA PLAYER — END USER LICENSE AGREEMENT
-Agreement version: 2026-10-24.2
-Proposed text for legal review before publication.
+AURA PLAYER COMMUNITY — LICENSE NOTICE
+SPDX-License-Identifier: GPL-3.0-only
 
-SUMMARY: Aura is a media player. You must have the necessary rights to your
-content. This agreement limits certain warranties and liabilities only where
-the law permits. Your non-waivable rights remain unaffected. Read the full
-agreement before accepting.
+Copyright (c) 2026 Juan Pablo Muñoz Leiva (theforgotten-dev).
 
-1. PARTIES AND ACCEPTANCE
-The licensor of Aura Player's original code is Juan Pablo Muñoz Leiva
-(theforgotten-dev), an individual, identified in LICENSE-Aura.txt. Currently published contact:
-https://github.com/theforgotten-dev. This agreement governs the relationship between
-the licensor and the user of an authorized distribution.
+Aura Player Community is free software under the GNU General Public License,
+version 3 only. You may use, study, modify and redistribute it, including
+commercially, under that license.
 
-Acceptance requires an affirmative action identifying this agreement, such
-as selecting "I accept the agreement" in the installer. Silence, downloading
-a file or reading this copy does not by itself constitute acceptance. If you
-do not agree, cancel installation and do not use Aura's original code under
-this license. This does not restrict independent third-party rights.
-Anyone accepting for an organization must have authority to bind it. Anyone
-without contractual capacity must act through a legal representative where
-required by applicable law.
+There is no additional proprietary EULA. This filename is retained for
+packaging compatibility. The complete terms are in LICENSE in the repository
+and LICENSE-Aura.txt in official packages.
 
-2. LICENSE AND OWNERSHIP
-Subject to this agreement, the licensor grants a non-exclusive license to
-install and run the original binary on devices you control for lawful
-personal or internal organizational purposes, and keep a backup copy. This
-agreement does not itself impose a price, subscription or future charges.
-Additional commercial terms must be separately disclosed and agreed before
-contracting. Aura is planned as a paid application distributed through
-Microsoft Store. Price, currency, taxes, duration of purchase rights and any
-trial or subscription must be disclosed in the Store offer before payment.
-This draft does not establish a subscription, perpetual updates or future
-services.
+The program comes WITHOUT ANY WARRANTY as provided in sections 15 and 16
+of GPLv3. Third-party components retain their own licenses. No rights are
+granted over music, movies or other third-party works.
 
-For Microsoft Store acquisitions, applicable Store terms concerning
-acquisition, devices, reinstallation, payments and refund requests are
-preserved, together with statutory user rights. This EULA does not amend
-the user's separate agreement with Microsoft or represent Microsoft as
-Aura's author or technical support provider. Custom license terms must be
-available before purchase and validly accepted; a post-payment screen alone
-does not establish prior assent. If validly applicable custom terms are
-not supplied, the applicable Store standard application license terms must
-be determined. Mandatory rights, including any applicable withdrawal or
-refund rights, always take precedence.
-
-Rights legally held by the licensor in original code, branding and assets
-are reserved. No original source-code access or general right to sell,
-sublicense, redistribute or create derivatives of that code is granted.
-Ownership notices must not be removed. Mandatory statutory rights and
-third-party licenses take precedence over these restrictions. Reverse
-engineering protected by mandatory law, or necessary to exercise LGPL
-replacement, modification or debugging rights under the relevant licenses,
-is not prohibited.
-
-3. CONTENT AND LAWFUL USE
-You select files and subtitles and must establish that access, use and any
-public performance are authorized or covered by an applicable legal exception.
-The player license grants no rights to movies, music, subtitles, third-party
-trademarks or public communication of works.
-
-Do not use Aura to infringe copyright or privacy, access systems or content
-without authorization, distribute unlawful material, introduce malicious
-code, or circumvent technological measures where prohibited by law. Statutory
-exceptions remain available. Technical playback does not certify a file's
-lawful origin or use. Users remain responsible for their own unlawful acts
-under applicable law; this does not transfer the licensor's own liability
-to the user.
-
-4. SECURITY AND FUNCTIONAL SCOPE
-Keep backups and use files from trusted sources. Media files may be corrupt
-or contain malicious input. Keep software and the operating system updated
-and use safe listening levels. Aura is not intended for uses where failure
-could endanger lives, health, critical infrastructure or emergency systems.
-
-Compatibility depends on the container, codec, file, hardware and version.
-An extension list does not guarantee playback of every file. Universal
-support, DRM decryption, continuous availability, error-free operation and
-immunity to hostile files are not promised. This does not diminish expressly
-advertised features, legal warranties or mandatory security obligations.
-
-5. WARRANTIES
-TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS IS"
-AND "AS AVAILABLE", WITHOUT VOLUNTARY IMPLIED WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT. THIS DISCLAIMER DOES
-NOT AFFECT VALID EXPRESS WARRANTIES, CONTRACTED FEATURES OR STATUTORY
-WARRANTIES AND REMEDIES THAT CANNOT LAWFULLY BE DISCLAIMED.
-
-6. LIABILITY AND EXCEPTIONS
-Where applicable law permits, indirect, special, incidental and consequential
-damages, including lost profits, arising from use of the software are excluded.
-This clause does not exclude direct damages or impose a general monetary
-liability cap on consumers.
-
-No exclusion in this agreement applies to intentional misconduct, fraud,
-gross negligence, personal injury or death attributable to the licensor,
-the licensor's own breaches of non-waivable statutory duties, or any other
-liability that the law prohibits limiting. Rights to repair, reimbursement,
-compensation, collective actions and other legally available remedies are
-not waived. Exclusions operate only within their lawful scope; a general
-savings clause does not make an unfair term valid. A competent court may
-decline to enforce inapplicable provisions.
-
-7. THIRD-PARTY COMPONENTS
-Libraries, codecs, fonts and other third-party materials retain their licenses
-and notices, provided in licenses. Their respective licenses prevail for
-those components in a conflict. This agreement does not restrict LGPL rights
-or add conditions to the exercise of third-party license permissions. It
-does not replace source-delivery or distribution obligations imposed by
-those licenses.
-
-8. TERM AND TERMINATION
-You may end this license by ceasing use and deleting the licensed original
-code, without affecting copies you are legally entitled to retain. The
-licensor may terminate for a material breach attributable to you, following
-notice and a reasonable opportunity to cure where appropriate. This does
-not authorize remote access, deletion of your files or arbitrary withdrawal
-of paid features. Termination does not extinguish accrued rights, existing
-claims or independent third-party rights.
-
-9. CHILE, UNITED STATES AND OTHER TERRITORIES
-Chilean law is proposed to govern this agreement without depriving users of
-mandatory protections arising from residence or other applicable rules.
-Where applicable in Chile, rights under Law No. 19,496 and exceptions under
-Law No. 17,336 remain intact. United States federal and state laws may grant
-additional warranties or rights, so some exclusions above may not apply.
-Uniform enforceability across all U.S. states or countries is not represented.
-
-Disputes go to the courts competent under applicable law. No mandatory
-arbitration, exclusive foreign venue, class-action waiver or requirement to
-contact the licensor before approaching an authority is imposed. You may
-report issues using the contact above without affecting legal deadlines
-or remedies.
-
-10. CHANGES, COPIES AND SEVERABILITY
-Keep this agreement and included licenses. A new version does not
-retroactively change accepted terms; material changes require renewed assent
-where appropriate. If a provision is invalid, the remaining provisions
-survive where legally possible. Spanish and English versions aim to express
-the same terms. Mandatory language, interpretation and applicable consumer-
-favorable rules prevail; no language priority is imposed to remove rights.
-
-This EULA provides no exemption from criminal or administrative liability
-and does not bind non-parties. It does not give the licensor immunity.
+Source and contact:
+https://github.com/theforgotten-dev/auraplayer-community
