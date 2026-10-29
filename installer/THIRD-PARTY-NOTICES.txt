@@ -11,8 +11,8 @@ describes this variant as LGPLv3. License texts and exact binary provenance are
 included in this directory.
 
 Upstream sources and build instructions:
-https://github.com/mpv-player/mpv/tree/703e59b0e
-https://github.com/mpv-player/mpv/blob/703e59b0e/.github/workflows/build.yml
+https://github.com/mpv-player/mpv/tree/dc4b285c9
+https://github.com/mpv-player/mpv/blob/dc4b285c9/.github/workflows/build.yml
 https://github.com/mpv-player/mpv/releases/tag/git-release
 https://ffmpeg.org/
 
