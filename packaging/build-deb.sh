@@ -94,8 +94,8 @@ Section: sound
 Priority: optional
 Architecture: $ARCH
 Depends: $DEPENDS
-Maintainer: Juan Pablo Muñoz Leiva <empowdered@users.noreply.github.com>
-Homepage: https://github.com/theforgotten-dev/playerdoit
+Maintainer: Juan Pablo Muñoz Leiva <theforgotten-dev@users.noreply.github.com>
+Homepage: https://github.com/theforgotten-dev/auraplayer
 Description: Modular GPU-rendered audio player
  Aura Music Player is a modular audio player written in Go. It uses Oto as the
  PCM engine, go-mp3 for streaming MP3 decoding and Gio for a desktop interface
