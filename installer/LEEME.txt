@@ -1,0 +1,27 @@
+Aura Player 1.2.0 - Windows x64
+
+Incluye el reproductor y el motor de video libmpv LGPL.
+La lista de extensiones de audio y video aceptadas esta en FORMATS.json.
+Los archivos protegidos con DRM y MIDI sin sintetizador no estan incluidos.
+No requiere instalar Go, FFmpeg, VLC ni descargar codecs por separado.
+
+CONFIG o Ctrl+P: preferencias de audio, video, subtitulos e interfaz.
+F11 / Alt+Enter / doble clic en el video: pantalla completa.
+Esc: cerrar preferencias o salir de pantalla completa.
+Mover el mouse: mostrar controles flotantes.
++ SUBS: cargar subtitulos. El nombre de la pista permite cambiar de idioma.
+
+Se detectan subtitulos junto al video y dentro de Subs o Subtitles.
+Los ajustes se guardan en %APPDATA%\playerdoit.
+
+La instalacion es para el usuario actual y no requiere permisos de administrador.
+Las asociaciones de archivos son opcionales y no reemplazan la aplicacion
+predeterminada elegida en Windows. Aura aparece en "Abrir con".
+El desinstalador conserva las preferencias personales.
+
+Las licencias de Aura y de terceros se incluyen en este directorio y en licenses.
+
+Los acuerdos propuestos en espanol e ingles y la guia de uso responsable
+estan en legal. El instalador interactivo presenta el EULA antes de instalar.
+El portable incluye los textos, pero aun no incorpora una pantalla propia
+de aceptacion: su mera descarga o ejecucion no acredita consentimiento.
