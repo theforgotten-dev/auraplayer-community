@@ -1,0 +1,29 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: aura-player
+Source: https://github.com/theforgotten-dev/auraplayer
+
+Files: *
+Copyright: 2026 Juan Pablo Muñoz Leiva (theforgotten-dev)
+License: proprietary
+ This is proprietary software. Copyright (c) 2026 Juan Pablo Muñoz Leiva
+ (theforgotten-dev). All rights reserved.
+ .
+ No permission is granted to use, copy, modify, publish, distribute,
+ sublicense, sell or create derivative works of these materials without the
+ prior written authorisation of the copyright holder. Any permission granted
+ separately is limited to the terms of that authorisation.
+ .
+ The software is provided "as is", without warranty of any kind, to the extent
+ permitted by applicable law. To the same extent, the holder is not liable for
+ damages arising from the use of the software.
+ .
+ To request authorisation, contact the holder at
+ https://github.com/theforgotten-dev.
+ .
+ Third-party dependencies keep their own licenses and copyright notices. This
+ license does not replace, restrict or relicense those components.
+
+Files: debian/*
+Copyright: 2026 Juan Pablo Muñoz Leiva (theforgotten-dev)
+License: proprietary
+ See the license above.
