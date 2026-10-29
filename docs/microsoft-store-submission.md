@@ -1,3 +1,7 @@
+> Documento histórico de la edición comercial heredada. No define la licencia de
+> Community: rigen `LICENSE` (GPL-3.0-only) y `legal/COMMUNITY-LICENSE.md`.
+> Las referencias a EULA propietario, pago o aceptación no se aplican a Community.
+
 # Subir Aura Player a Microsoft Store
 
 Estado del proyecto: rama `feature/installer-releases`. Hay instalador EXE y

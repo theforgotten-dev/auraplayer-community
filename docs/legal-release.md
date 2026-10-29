@@ -1,3 +1,7 @@
+> Documento histórico de la edición comercial heredada. No define la licencia de
+> Community: rigen `LICENSE` (GPL-3.0-only) y `legal/COMMUNITY-LICENSE.md`.
+> Las referencias a EULA propietario, pago o aceptación no se aplican a Community.
+
 # Documentos legales de Aura Player
 
 Estado: propuesta de trabajo, 24 de octubre de 2026. No es dictamen jurídico,

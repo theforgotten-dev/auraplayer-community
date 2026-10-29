@@ -10,7 +10,7 @@ GitHub Pages debe tener `build_type: workflow`. El despliegue usa el entorno `gi
 
 ## SEO y contenido
 
-La página tiene título, descripción, canonical, Open Graph, tarjeta social, datos estructurados WebSite y sitemap. No se declaran calificaciones, descargas, firma digital o licencia GPL como hechos actuales. Actualizar el estado al publicar la primera versión y al resolver la licencia.
+La página tiene título, descripción, canonical, Open Graph, tarjeta social, datos estructurados WebSite y sitemap. Los materiales originales están bajo GPL-3.0-only. No se declaran calificaciones, descargas ni firma digital como hechos actuales. Actualizar el estado al publicar la primera versión.
 
 La imagen procede de `assets/store/EN/aura-screenshot-audio-1366x768.png` y se identifica como interfaz de la base, no como captura de una versión Community ya publicada. El icono procede de `assets/aura-icon.png`.
 

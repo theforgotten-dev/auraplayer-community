@@ -1,3 +1,7 @@
+> Documento histórico de la edición comercial heredada. No define la licencia de
+> Community: rigen `LICENSE` (GPL-3.0-only) y `legal/COMMUNITY-LICENSE.md`.
+> Las referencias a EULA propietario, pago o aceptación no se aplican a Community.
+
 # Compilacion y firma de las versiones instalables
 
 Desde 1.2.3, por instruccion del titular tras el rechazo de seguridad de Store,

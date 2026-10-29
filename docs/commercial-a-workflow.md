@@ -1,3 +1,7 @@
+> Documento histórico de la edición comercial heredada. No define la licencia de
+> Community: rigen `LICENSE` (GPL-3.0-only) y `legal/COMMUNITY-LICENSE.md`.
+> Las referencias a EULA propietario, pago o aceptación no se aplican a Community.
+
 # Aura Player: versión A comercial
 
 El repositorio privado https://github.com/theforgotten-dev/auraplayer es la fuente de la versión A comercial. Su licencia y los acuerdos de distribución están definidos en LICENSE y en la documentación legal incorporada mediante el PR #1. La denominación comercial no acredita firma, aprobación de Store ni una publicación.
