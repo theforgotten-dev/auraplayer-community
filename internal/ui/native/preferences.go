@@ -13,22 +13,27 @@ import (
 )
 
 type Preferences struct {
-	Tone      dsp.ToneConfig `json:"tone"`
-	Radio     radio.Config   `json:"radio"`
-	Styles    map[string]int `json:"styles,omitempty"`
-	Version   int            `json:"version"`
-	Volume    float64        `json:"volume"`
-	Muted     bool           `json:"muted"`
-	Subtitles bool           `json:"subtitles"`
-	Language  string         `json:"subtitleLanguage"`
-	AutoHide  bool           `json:"autoHideControls"`
-	HideDelay int            `json:"hideDelaySeconds"`
+	SpectrumRGB          bool           `json:"spectrumRGB"`
+	SpectrumCycleSeconds int            `json:"spectrumCycleSeconds"`
+	Tone                 dsp.ToneConfig `json:"tone"`
+	Radio                radio.Config   `json:"radio"`
+	Styles               map[string]int `json:"styles,omitempty"`
+	Version              int            `json:"version"`
+	Volume               float64        `json:"volume"`
+	Muted                bool           `json:"muted"`
+	Subtitles            bool           `json:"subtitles"`
+	Language             string         `json:"subtitleLanguage"`
+	AutoHide             bool           `json:"autoHideControls"`
+	HideDelay            int            `json:"hideDelaySeconds"`
 }
 
 func defaultPreferences() Preferences {
-	return Preferences{Radio: radio.DefaultConfig(), Version: 1, Volume: .8, Subtitles: true, Language: "spa", AutoHide: true, HideDelay: 2}
+	return Preferences{SpectrumCycleSeconds: 24, Radio: radio.DefaultConfig(), Version: 1, Volume: .8, Subtitles: true, Language: "spa", AutoHide: true, HideDelay: 2}
 }
 func (p Preferences) validate() error {
+	if p.SpectrumCycleSeconds != 12 && p.SpectrumCycleSeconds != 24 && p.SpectrumCycleSeconds != 48 {
+		return errors.New("ciclo RGB fuera de rango")
+	}
 	if err := p.Tone.Validate(); err != nil {
 		return err
 	}
@@ -58,7 +63,21 @@ func preferencesPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "playerdoit", "preferences.json"), nil
+	return filepath.Join(dir, "auraplayer-community", "preferences.json"), nil
+}
+
+// Read the legacy profile only on the first Community launch. Future saves use
+// Community's own profile so new fields cannot break older Aura editions.
+func readCommunityPreferences(path string) (Preferences, error) {
+	p, err := readPreferences(path)
+	if !errors.Is(err, os.ErrNotExist) {
+		return p, err
+	}
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return Preferences{}, err
+	}
+	return readPreferences(filepath.Join(dir, "playerdoit", "preferences.json"))
 }
 func readPreferences(path string) (Preferences, error) {
 	f, err := os.Open(path)

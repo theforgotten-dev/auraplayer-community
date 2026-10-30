@@ -35,7 +35,7 @@ const (
 	windowWidth   = 1280
 	windowHeight  = 780
 	compactWidth  = 720
-	compactHeight = 420
+	compactHeight = 540
 	minWidth      = 600
 	minHeight     = 360
 	windowBarH    = 38
@@ -78,6 +78,7 @@ type UI struct {
 	levelLeft          float64
 	levelRight         float64
 	lastAnimTime       time.Time
+	spectrumColorPhase float64
 	nextPoll           time.Time
 	lastSeek           time.Time
 	message            string
@@ -648,20 +649,27 @@ func (ui *UI) layoutNowPlayingCard(gtx layout.Context) layout.Dimensions {
 func (ui *UI) layoutSpectrum(gtx layout.Context) layout.Dimensions {
 	if track := ui.currentTrack(); track != nil && track.Video {
 		return ui.layoutVideo(gtx)
-	} else if track != nil && track.LibMPV {
-		return ui.outlineBox(gtx, ui.palette.Line, func(gtx layout.Context) layout.Dimensions {
-			return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				return ui.label(gtx, "AUDIO · "+track.Codec+"\n"+string(ui.state.State), 16, ui.palette.Text, true)
-			})
-		})
 	}
 	return ui.outlineBox(gtx, ui.palette.Line, func(gtx layout.Context) layout.Dimensions {
 		return layout.Inset{Top: 8, Right: 10, Bottom: 8, Left: 10}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 			return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(5)}.Layout(gtx,
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+					track := ui.currentTrack()
+					if track == nil || !track.LibMPV {
+						return layout.Dimensions{}
+					}
+					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						return ui.label(gtx, "AUDIO · "+track.Codec+"\n"+string(ui.state.State), 12, ui.palette.Text, true)
+					})
+				}),
+				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					return layout.Flex{Axis: layout.Horizontal, Alignment: layout.Middle}.Layout(gtx,
 						layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
-							return ui.label(gtx, "// LIVE_SPECTRUM_ANALYZER · 60_FPS · FFT_2048", 8, ui.palette.Muted, true)
+							label := "// LIVE_SPECTRUM_ANALYZER · FFT_2048"
+							if track := ui.currentTrack(); track != nil && track.LibMPV {
+								label = "// LIVE_SPECTRUM_ANALYZER · 16 BANDAS"
+							}
+							return ui.label(gtx, label, 8, ui.palette.Muted, true)
 						}),
 						layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 							return ui.label(gtx, "● CH_L   ● CH_R", 8, ui.palette.Accent, true)
@@ -778,6 +786,9 @@ func (ui *UI) animateSpectrum(now time.Time, playing bool) {
 		}
 	}
 	ui.lastAnimTime = now
+	if playing && ui.preferences.SpectrumRGB && ui.preferences.SpectrumCycleSeconds > 0 {
+		ui.spectrumColorPhase = math.Mod(ui.spectrumColorPhase+dt/float64(ui.preferences.SpectrumCycleSeconds), 1)
+	}
 
 	// Winamp-style visual ballistics:
 	// Bars fall quickly and smoothly: ~1.8 units/s (100% to 0% in ~550ms)
@@ -877,25 +888,32 @@ func (ui *UI) drawSpectrum(gtx layout.Context) layout.Dimensions {
 	peakCapHeight := max(1, gtx.Dp(2))
 
 	for index := 0; index < 16; index++ {
+		leftColor, rightColor, peakColor := ui.palette.ChannelLeft, ui.palette.ChannelRight, ui.palette.LineHot
+		if ui.preferences.SpectrumRGB {
+			hue := ui.spectrumColorPhase + float64(index)/16
+			leftColor = spectrumRGB(hue)
+			rightColor = spectrumRGB(hue + .035)
+			peakColor = spectrumRGB(hue + .07)
+		}
 		x := index * (bandWidth + gap)
 		leftHeight := int(float64(graphHeight) * ui.visualLeft[index])
 		rightHeight := int(float64(graphHeight) * ui.visualRight[index])
 
 		// Left bar
-		fillSegmentedBar(gtx.Ops, image.Rect(x, graphBottom-leftHeight, x+barWidth, graphBottom), ui.palette.ChannelLeft, ui.palette.Background, graphBottom)
+		fillSegmentedBar(gtx.Ops, image.Rect(x, graphBottom-leftHeight, x+barWidth, graphBottom), leftColor, ui.palette.Background, graphBottom)
 		// Left peak cap
 		if peakL := ui.peaksLeft[index]; peakL > 0.01 {
 			peakY := graphBottom - int(float64(graphHeight)*peakL)
-			fillRect(gtx.Ops, image.Rect(x, max(visualTop, peakY-peakCapHeight), x+barWidth, max(visualTop+peakCapHeight, peakY)), ui.palette.LineHot)
+			fillRect(gtx.Ops, image.Rect(x, max(visualTop, peakY-peakCapHeight), x+barWidth, max(visualTop+peakCapHeight, peakY)), peakColor)
 		}
 
 		// Right bar
 		xRight := x + barWidth + barGap
-		fillSegmentedBar(gtx.Ops, image.Rect(xRight, graphBottom-rightHeight, xRight+barWidth, graphBottom), ui.palette.ChannelRight, ui.palette.Background, graphBottom)
+		fillSegmentedBar(gtx.Ops, image.Rect(xRight, graphBottom-rightHeight, xRight+barWidth, graphBottom), rightColor, ui.palette.Background, graphBottom)
 		// Right peak cap
 		if peakR := ui.peaksRight[index]; peakR > 0.01 {
 			peakY := graphBottom - int(float64(graphHeight)*peakR)
-			fillRect(gtx.Ops, image.Rect(xRight, max(visualTop, peakY-peakCapHeight), xRight+barWidth, max(visualTop+peakCapHeight, peakY)), ui.palette.LineHot)
+			fillRect(gtx.Ops, image.Rect(xRight, max(visualTop, peakY-peakCapHeight), xRight+barWidth, max(visualTop+peakCapHeight, peakY)), peakColor)
 		}
 	}
 	return layout.Dimensions{Size: size}

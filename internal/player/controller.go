@@ -289,6 +289,13 @@ func (c *Controller) Snapshot() Snapshot {
 func (c *Controller) Spectrum() dsp.Spectrum {
 	c.mu.Lock()
 	analyzer := c.analyzer
+	if analyzer == nil {
+		if source, ok := c.player.(interface{ Spectrum() dsp.Spectrum }); ok {
+			s := source.Spectrum()
+			c.mu.Unlock()
+			return s
+		}
+	}
 	c.mu.Unlock()
 	if analyzer == nil {
 		return dsp.EmptySpectrum()

@@ -8,6 +8,7 @@ import (
 	"image"
 	"os"
 	"path/filepath"
+	"playerdoit/internal/dsp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -131,17 +132,21 @@ func loadAPI() (*api, error) {
 }
 
 type mpvPlayer struct {
-	mu        sync.Mutex
-	a         *api
-	handle    uintptr
-	context   uintptr
-	done      chan struct{}
-	finished  chan struct{}
-	frame     atomic.Pointer[image.RGBA]
-	renderErr atomic.Int32
-	err       error
-	volume    float64
-	ended     bool
+	audioOnly       bool
+	spectrumEnabled bool
+	spectrum        dsp.Spectrum
+	spectrumRead    time.Time
+	mu              sync.Mutex
+	a               *api
+	handle          uintptr
+	context         uintptr
+	done            chan struct{}
+	finished        chan struct{}
+	frame           atomic.Pointer[image.RGBA]
+	renderErr       atomic.Int32
+	err             error
+	volume          float64
+	ended           bool
 }
 
 func Open(path string) (Player, error) {
@@ -163,7 +168,7 @@ func openMedia(path string, withVideo bool) (Player, error) {
 	if err != nil {
 		return nil, err
 	}
-	p := &mpvPlayer{a: a, handle: a.create(), volume: 0.8, done: make(chan struct{}), finished: make(chan struct{})}
+	p := &mpvPlayer{a: a, audioOnly: !withVideo, handle: a.create(), volume: 0.8, done: make(chan struct{}), finished: make(chan struct{})}
 	if p.handle == 0 {
 		return nil, errors.New("create libmpv player failed")
 	}

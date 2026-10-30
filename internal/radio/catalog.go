@@ -48,7 +48,6 @@ func (c Client) Search(ctx context.Context, style string) ([]Station, error) {
 	if config.Provider == "icecast" {
 		return c.searchIcecast(ctx, config, style)
 	}
-	base := strings.TrimRight(config.BaseURL, "/")
 	q := url.Values{"hidebroken": {strconv.FormatBool(config.HideBroken)}, "limit": {strconv.Itoa(config.Limit)}, "order": {"clickcount"}, "reverse": {"true"}}
 	if config.Country != "" {
 		q.Set("countrycode", config.Country)
@@ -58,16 +57,7 @@ func (c Client) Search(ctx context.Context, style string) ([]Station, error) {
 	}
 	ctx, cancel := context.WithTimeout(ctx, 12*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", base+"/json/stations/search?"+q.Encode(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", "AuraPlayer/1.0")
-	client := c.HTTP
-	if client == nil {
-		client = http.DefaultClient
-	}
-	resp, err := client.Do(req)
+	resp, err := c.searchResponse(ctx, config.BaseURL, q)
 	if err != nil {
 		return nil, err
 	}

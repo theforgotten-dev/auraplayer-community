@@ -5,9 +5,9 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $runtimeDir = Join-Path $repoRoot "build\release-runtime"
 New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
 $archive = Join-Path $runtimeDir "libmpv-lgpl.zip"
-$url = "https://github.com/mpv-player/mpv/releases/download/git-release/libmpv-v0.41.0-dev-gdc4b285c9-40753318951-x86_64-w64-mingw32-lgpl.zip"
-$archiveHash = "6E1FD3FA52BE457058A8088A531C434E4354F5A203201F81567010D894A9E13D"
-$dllHash = "21C6366F4BA77DA78411115E85A1815BCB00A2352FBE06A7020690DD47C182CF"
+$url = "https://github.com/mpv-player/mpv/releases/download/git-release/libmpv-v0.41.0-dev-g8e5a96fc4-40997856045-x86_64-w64-mingw32-lgpl.zip"
+$archiveHash = "4F69A8412C1CED9E1EC328C6E1C2E8CE4701FE2DB8D7D2CC6F4C45A1525F1963"
+$dllHash = "547D5C3558116BD628DC2CA3202D00B3D377A08A84732692415B2624C2765063"
 if (-not (Test-Path -LiteralPath $archive)) { Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $archive }
 if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $archiveHash) { throw "LGPL archive checksum mismatch." }
 $dll = Join-Path $runtimeDir "libmpv-2.dll"
@@ -21,9 +21,9 @@ foreach ($license in @(@("LGPL-3.0.txt","https://www.gnu.org/licenses/lgpl-3.0.t
     if (-not (Test-Path -LiteralPath $destination)) { Invoke-WebRequest -UseBasicParsing -Uri $license[1] -OutFile $destination }
 }
 @{
-    variant="LGPL"; architecture="windows-amd64"; mpvCommit="dc4b285c9";
+    variant="LGPL"; architecture="windows-amd64"; mpvCommit="8e5a96fc4";
     archiveUrl=$url; archiveSHA256=$archiveHash; dllSHA256=$dllHash;
-    sourceUrl="https://github.com/mpv-player/mpv/tree/dc4b285c9";
-    buildWorkflow="https://github.com/mpv-player/mpv/blob/dc4b285c9/.github/workflows/build.yml"
+    sourceUrl="https://github.com/mpv-player/mpv/tree/8e5a96fc4";
+    buildWorkflow="https://github.com/mpv-player/mpv/blob/8e5a96fc4/.github/workflows/build.yml"
 } | ConvertTo-Json | Set-Content -Encoding UTF8 (Join-Path $runtimeDir "runtime-manifest.json")
 Write-Output "Verified LGPL runtime: $dll"

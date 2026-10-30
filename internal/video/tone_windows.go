@@ -15,5 +15,12 @@ func (p *mpvPlayer) ConfigureTone(c dsp.ToneConfig) error {
 	if graph != "" {
 		graph = "lavfi=[" + graph + "]"
 	}
+	p.spectrumEnabled = p.audioOnly && p.number("audio-params/channel-count") <= 2
+	if p.spectrumEnabled {
+		if graph != "" {
+			graph += ","
+		}
+		graph += "@aura-spectrum:lavfi=[" + spectrumGraph() + "]"
+	}
 	return p.set("af", graph)
 }

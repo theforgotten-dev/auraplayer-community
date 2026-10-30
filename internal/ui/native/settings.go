@@ -15,6 +15,8 @@ import (
 )
 
 type settingsPanel struct {
+	spectrumRGB                                      widget.Bool
+	spectrumSpeed                                    widget.Clickable
 	open                                             bool
 	tab                                              int
 	draft                                            Preferences
@@ -30,7 +32,7 @@ func (ui *UI) loadPreferences() {
 	ui.preferences = defaultPreferences()
 	path, err := preferencesPath()
 	if err == nil {
-		p, readErr := readPreferences(path)
+		p, readErr := readCommunityPreferences(path)
 		if readErr == nil {
 			ui.preferences = p
 		} else if !errors.Is(readErr, os.ErrNotExist) {
@@ -63,6 +65,7 @@ func (ui *UI) editPreferences(p Preferences) {
 	s.muted.Value = p.Muted
 	s.subtitles.Value = p.Subtitles
 	s.autoHide.Value = p.AutoHide
+	s.spectrumRGB.Value = p.SpectrumRGB
 }
 
 func (ui *UI) openSettings() {
@@ -95,6 +98,7 @@ func (ui *UI) saveSettings() {
 	p.Muted = s.muted.Value
 	p.Subtitles = s.subtitles.Value
 	p.AutoHide = s.autoHide.Value
+	p.SpectrumRGB = s.spectrumRGB.Value
 	if err := p.validate(); err != nil {
 		s.message = err.Error()
 		return
@@ -165,6 +169,12 @@ func (ui *UI) updateSettings(gtx layout.Context) {
 	if s.delay.Clicked(gtx) {
 		s.draft.HideDelay = s.draft.HideDelay%5 + 1
 	}
+	if s.spectrumSpeed.Clicked(gtx) {
+		s.draft.SpectrumCycleSeconds *= 2
+		if s.draft.SpectrumCycleSeconds > 48 {
+			s.draft.SpectrumCycleSeconds = 12
+		}
+	}
 	if s.fullscreen.Clicked(gtx) {
 		ui.setFullscreen(!ui.fullscreen)
 	}
@@ -189,6 +199,9 @@ func (ui *UI) layoutSettings(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Min = gtx.Constraints.Max
 	return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		width, height := 660, 390
+		if ui.settings.tab == 3 {
+			height = 490
+		}
 		if ui.settings.tab == 0 && ui.tonePanel.open {
 			width, height = 960, 620
 		}
@@ -294,6 +307,12 @@ func (ui *UI) layoutSettingsBody(gtx layout.Context) layout.Dimensions {
 		}
 	case 3:
 		rows = []layout.FlexChild{
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				return ui.settingsCheck(gtx, &s.spectrumRGB, "Espectro RGB suave en las frecuencias")
+			}),
+			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+				return ui.button(gtx, &s.spectrumSpeed, fmt.Sprintf("Ciclo de color: %d segundos", s.draft.SpectrumCycleSeconds), false)
+			}),
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				return ui.button(gtx, &s.skins, "Cambiar apariencia / skin", false)
 			}),
