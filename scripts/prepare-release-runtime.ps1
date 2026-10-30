@@ -16,9 +16,8 @@ if (-not (Test-Path -LiteralPath $dll) -or (Get-FileHash -LiteralPath $dll -Algo
     if ($LASTEXITCODE -ne 0) { throw "Could not extract LGPL runtime." }
 }
 if ((Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash -ne $dllHash) { throw "LGPL DLL checksum mismatch." }
-foreach ($license in @(@("LGPL-3.0.txt","https://www.gnu.org/licenses/lgpl-3.0.txt"),@("GPL-3.0.txt","https://www.gnu.org/licenses/gpl-3.0.txt"))) {
-    $destination = Join-Path $runtimeDir $license[0]
-    if (-not (Test-Path -LiteralPath $destination)) { Invoke-WebRequest -UseBasicParsing -Uri $license[1] -OutFile $destination }
+foreach ($license in @("LGPL-3.0.txt","GPL-3.0.txt")) {
+    Copy-Item -LiteralPath (Join-Path $repoRoot "legal/licenses/$license") -Destination (Join-Path $runtimeDir $license) -Force
 }
 @{
     variant="LGPL"; architecture="windows-amd64"; mpvCommit="8e5a96fc4";
