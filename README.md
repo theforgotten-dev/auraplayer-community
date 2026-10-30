@@ -1,5 +1,10 @@
 # Aura Player Community
 
+[Sitio oficial](https://theforgotten-dev.github.io/auraplayer-community/) ·
+[Descargar para Windows](https://theforgotten-dev.github.io/auraplayer-community/descargar.html) ·
+[Formatos compatibles](https://theforgotten-dev.github.io/auraplayer-community/formatos.html) ·
+[Radio online](https://theforgotten-dev.github.io/auraplayer-community/radio-online.html)
+
 ## Licencia
 
 Repositorio: https://github.com/theforgotten-dev/auraplayer-community
