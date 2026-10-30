@@ -7,3 +7,4 @@
 coverage.out
 /assets/store/**/*.mp4
 .env
+/docs/

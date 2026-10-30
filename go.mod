@@ -1,6 +1,6 @@
 module playerdoit
 
-go 1.27.1
+go 1.27.3
 
 require (
 	gioui.org v0.10.3
@@ -11,7 +11,7 @@ require (
 	github.com/gopxl/beep/v2 v2.1.1
 	github.com/hajimehoshi/go-mp3 v0.3.4
 	go.senan.xyz/taglib v0.14.0
-	golang.org/x/sys v0.48.0
+	golang.org/x/sys v0.49.0
 	gonum.org/v1/gonum v0.17.0
 )
 
@@ -32,6 +32,6 @@ require (
 	github.com/tetratelabs/wazero v1.11.1-0.20260428013916-2bbd517b7633 // indirect
 	golang.org/x/exp/shiny v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/image v0.46.0 // indirect
-	golang.org/x/net v0.56.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 )
