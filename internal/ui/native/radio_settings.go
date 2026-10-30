@@ -1,6 +1,7 @@
 package native
 
 import (
+	"context"
 	"fmt"
 	"gioui.org/layout"
 	"gioui.org/widget"
@@ -11,15 +12,32 @@ import (
 )
 
 type radioSettings struct {
-	source, styles, country  widget.Editor
-	hideBroken, personalized widget.Bool
-	limit, reset, provider   widget.Clickable
-	list                     widget.List
+	source, styles, country, mirrors widget.Editor
+	hideBroken, personalized         widget.Bool
+	limit, reset, provider           widget.Clickable
+	list                             widget.List
+	refreshMirrors                   widget.Clickable
+	mirrorResults                    chan mirrorResult
+	mirrorCancel                     context.CancelFunc
+	mirrorBusy                       bool
+	mirrorMessage                    string
+}
+
+type mirrorResult struct {
+	urls []string
+	err  error
 }
 
 func (ui *UI) editRadioSettings(c radio.Config) {
 	r := &ui.radioSettings
+	if r.mirrorCancel != nil {
+		r.mirrorCancel()
+	}
+	r.mirrorResults = nil
+	r.mirrorBusy = false
+	r.mirrorMessage = "Lista guardada. Actualizar consulta los espejos anunciados actualmente."
 	r.source.SetText(c.BaseURL)
+	r.mirrors.SetText(strings.Join(c.Mirrors, "\n"))
 	r.styles.SetText(strings.Join(c.Styles, ", "))
 	r.country.SetText(c.Country)
 	r.hideBroken.Value = c.HideBroken
@@ -30,6 +48,10 @@ func (ui *UI) radioSettingsConfig() radio.Config {
 	r := &ui.radioSettings
 	c := ui.settings.draft.Radio
 	c.BaseURL = strings.TrimSpace(r.source.Text())
+	c.Mirrors = nil
+	for _, mirror := range strings.Fields(r.mirrors.Text()) {
+		c.Mirrors = append(c.Mirrors, mirror)
+	}
 	c.Country = strings.ToUpper(strings.TrimSpace(r.country.Text()))
 	c.Styles = nil
 	for _, s := range strings.Split(r.styles.Text(), ",") {
@@ -42,8 +64,39 @@ func (ui *UI) radioSettingsConfig() radio.Config {
 
 func (ui *UI) updateRadioSettings(gtx layout.Context) {
 	r := &ui.radioSettings
+	if r.mirrorResults != nil {
+		select {
+		case result := <-r.mirrorResults:
+			r.mirrorBusy = false
+			r.mirrorResults = nil
+			if result.err != nil {
+				r.mirrorMessage = "No se pudo actualizar: " + result.err.Error() + ". Se conserva la lista."
+			} else {
+				r.mirrors.SetText(strings.Join(result.urls, "\n"))
+				r.mirrorMessage = fmt.Sprintf("DNS anuncia %d espejo(s). No comprueba HTTP. Pulsa Guardar para conservarlos.", len(result.urls))
+			}
+		default:
+		}
+	}
 	if !ui.settings.open || ui.settings.tab != 5 {
 		return
+	}
+	if ui.settings.draft.Radio.Provider != "icecast" {
+		refresh := r.refreshMirrors.Clicked(gtx)
+		if refresh && !r.mirrorBusy {
+			r.mirrorBusy = true
+			r.mirrorMessage = "Consultando espejos anunciados por DNS..."
+			r.mirrorResults = make(chan mirrorResult, 1)
+			ctx, cancel := context.WithCancel(context.Background())
+			r.mirrorCancel = cancel
+			results, window := r.mirrorResults, ui.window
+			go func() {
+				defer cancel()
+				urls, err := radio.DiscoverMirrors(ctx)
+				results <- mirrorResult{urls, err}
+				window.Invalidate()
+			}()
+		}
 	}
 	if r.provider.Clicked(gtx) {
 		c := ui.radioSettingsConfig()
@@ -93,6 +146,40 @@ func (ui *UI) layoutRadioSettings(gtx layout.Context) layout.Dimensions {
 			return ui.discoveryEditor(gtx, &r.source, "https://de1.api.radio-browser.info")
 		},
 		func(gtx layout.Context) layout.Dimensions {
+			if ui.settings.draft.Radio.Provider == "icecast" {
+				return layout.Dimensions{}
+			}
+			return ui.label(gtx, fmt.Sprintf("Máximo %d intentos totales. API principal primero; después los espejos en orden.", radio.MaxSearchAttempts), 11, ui.palette.Text, false)
+		},
+		func(gtx layout.Context) layout.Dimensions {
+			if ui.settings.draft.Radio.Provider == "icecast" {
+				return layout.Dimensions{}
+			}
+			return ui.label(gtx, fmt.Sprintf("Espejos configurados: %d. Una URL por línea (editable).", len(strings.Fields(r.mirrors.Text()))), 11, ui.palette.Text, false)
+		},
+		func(gtx layout.Context) layout.Dimensions {
+			if ui.settings.draft.Radio.Provider == "icecast" {
+				return layout.Dimensions{}
+			}
+			return ui.discoveryEditor(gtx, &r.mirrors, "Sin espejos adicionales")
+		},
+		func(gtx layout.Context) layout.Dimensions {
+			if ui.settings.draft.Radio.Provider == "icecast" {
+				return layout.Dimensions{}
+			}
+			label := "Actualizar espejos disponibles"
+			if r.mirrorBusy {
+				label = "Actualizando espejos..."
+			}
+			return ui.button(gtx, &r.refreshMirrors, label, false)
+		},
+		func(gtx layout.Context) layout.Dimensions {
+			if ui.settings.draft.Radio.Provider == "icecast" {
+				return layout.Dimensions{}
+			}
+			return ui.label(gtx, "Fuente: "+radio.MirrorDiscoveryHost+". "+r.mirrorMessage, 11, ui.palette.Muted, false)
+		},
+		func(gtx layout.Context) layout.Dimensions {
 			return ui.label(gtx, "Estilos iniciales separados por comas", 11, ui.palette.Text, false)
 		},
 		func(gtx layout.Context) layout.Dimensions {
@@ -130,5 +217,6 @@ func (ui *UI) discoveryEditor(gtx layout.Context, editor *widget.Editor, hint st
 func clonePreferences(p Preferences) Preferences {
 	p.Styles = maps.Clone(p.Styles)
 	p.Radio.Styles = append([]string(nil), p.Radio.Styles...)
+	p.Radio.Mirrors = append([]string(nil), p.Radio.Mirrors...)
 	return p
 }

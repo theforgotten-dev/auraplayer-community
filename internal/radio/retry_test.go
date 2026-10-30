@@ -26,21 +26,30 @@ func TestSearchFailsOverOfficialMirror(t *testing.T) {
 		}
 		return response, nil
 	})}
-	_, err := (Client{HTTP: client}).Search(context.Background(), "")
+	config := DefaultConfig()
+	config.Mirrors = []string{"https://mirror.example"}
+	_, err := (Client{HTTP: client, Config: &config}).Search(context.Background(), "")
 	if err != nil || len(hosts) != 2 || hosts[0] == hosts[1] {
 		t.Fatalf("hosts=%v err=%v", hosts, err)
 	}
 }
 
-func TestSearchStopsAfterFourFailures(t *testing.T) {
+func TestSearchStopsAfterThreeFailures(t *testing.T) {
 	calls := 0
+	var hosts []string
 	client := &http.Client{Transport: radioTransport(func(r *http.Request) (*http.Response, error) {
 		calls++
+		hosts = append(hosts, r.URL.Host)
 		return &http.Response{StatusCode: 503, Header: http.Header{"Retry-After": {"0"}}, Body: io.NopCloser(strings.NewReader(""))}, nil
 	})}
-	_, err := (Client{HTTP: client}).Search(context.Background(), "")
-	if err == nil || calls != 4 {
+	config := DefaultConfig()
+	config.Mirrors = []string{DefaultBaseURL, "https://mirror1.example", "https://mirror2.example", "https://unused.example"}
+	_, err := (Client{HTTP: client, Config: &config}).Search(context.Background(), "")
+	if err == nil || calls != 3 {
 		t.Fatalf("calls=%d err=%v", calls, err)
+	}
+	if strings.Join(hosts, ",") != "de1.api.radio-browser.info,mirror1.example,mirror2.example" {
+		t.Fatalf("configured order not respected: %v", hosts)
 	}
 }
 
@@ -102,7 +111,10 @@ func TestRetryDelayAndMirrors(t *testing.T) {
 			t.Fatal("invalid exponential backoff", delay)
 		}
 	}
-	if len(browserBases(DefaultBaseURL)) < 2 || len(browserBases("https://custom.example")) != 1 {
+	config := DefaultConfig()
+	config.BaseURL = "https://custom.example"
+	config.Mirrors = nil
+	if len(browserBases(config)) != 1 {
 		t.Fatal("incorrect mirror selection")
 	}
 }

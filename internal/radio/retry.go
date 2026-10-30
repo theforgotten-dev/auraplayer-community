@@ -22,18 +22,13 @@ func (b *cancelBody) Close() error {
 	return b.ReadCloser.Close()
 }
 
-// Custom directories remain on their configured host. Only official mirrors
-// may fail over to the public Radio Browser pool.
-func browserBases(base string) []string {
-	base = strings.TrimRight(base, "/")
-	bases := []string{base}
-	u, err := url.Parse(base)
-	if err == nil && u.Scheme == "https" && u.Port() == "" && u.Path == "" &&
-		strings.HasSuffix(u.Hostname(), ".api.radio-browser.info") {
-		for _, mirror := range []string{"https://all.api.radio-browser.info", "https://de1.api.radio-browser.info"} {
-			if mirror != base {
-				bases = append(bases, mirror)
-			}
+// Only explicitly configured servers are used, in the displayed order.
+func browserBases(config Config) []string {
+	bases := []string{strings.TrimRight(config.BaseURL, "/")}
+	for _, mirror := range config.Mirrors {
+		mirror = strings.TrimRight(mirror, "/")
+		if !contains(bases, mirror) {
+			bases = append(bases, mirror)
 		}
 	}
 	return bases
@@ -50,21 +45,21 @@ func retryDelay(value string, attempt int, now time.Time) time.Duration {
 	return (250 * time.Millisecond << attempt) + time.Duration(rand.IntN(100))*time.Millisecond
 }
 
-func (c Client) searchResponse(ctx context.Context, base string, query url.Values) (*http.Response, error) {
+func (c Client) searchResponse(ctx context.Context, config Config, query url.Values) (*http.Response, error) {
 	client := c.HTTP
 	if client == nil {
 		client = http.DefaultClient
 	}
-	bases := browserBases(base)
+	bases := browserBases(config)
 	var lastErr error
-	for attempt := 0; attempt < 4; attempt++ {
+	for attempt := 0; attempt < MaxSearchAttempts; attempt++ {
 		requestCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		req, err := http.NewRequestWithContext(requestCtx, http.MethodGet, bases[attempt%len(bases)]+"/json/stations/search?"+query.Encode(), nil)
 		if err != nil {
 			cancel()
 			return nil, err
 		}
-		req.Header.Set("User-Agent", "AuraPlayerCommunity/0.1.1")
+		req.Header.Set("User-Agent", "AuraPlayerCommunity/0.1.2")
 		resp, err := client.Do(req)
 		if err == nil && resp.StatusCode != 429 && resp.StatusCode != 502 && resp.StatusCode != 503 && resp.StatusCode != 504 {
 			// Keep the request context alive until Search finishes reading.
@@ -82,7 +77,7 @@ func (c Client) searchResponse(ctx context.Context, base string, query url.Value
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
-		if attempt == 3 {
+		if attempt == MaxSearchAttempts-1 {
 			break
 		}
 		timer := time.NewTimer(delay)
@@ -93,5 +88,5 @@ func (c Client) searchResponse(ctx context.Context, base string, query url.Value
 		case <-timer.C:
 		}
 	}
-	return nil, fmt.Errorf("Radio Browser no disponible tras 4 intentos: %w", lastErr)
+	return nil, fmt.Errorf("Radio Browser no disponible tras %d intentos: %w", MaxSearchAttempts, lastErr)
 }

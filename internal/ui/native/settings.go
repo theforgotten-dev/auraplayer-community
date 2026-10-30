@@ -199,7 +199,7 @@ func (ui *UI) layoutSettings(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Min = gtx.Constraints.Max
 	return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		width, height := 660, 390
-		if ui.settings.tab == 3 {
+		if ui.settings.tab == 3 || ui.settings.tab == 5 {
 			height = 490
 		}
 		if ui.settings.tab == 0 && ui.tonePanel.open {

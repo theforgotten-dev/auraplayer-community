@@ -41,6 +41,9 @@ func (c Client) Search(ctx context.Context, style string) ([]Station, error) {
 	}
 	if c.BaseURL != "" {
 		config.BaseURL = c.BaseURL
+		if c.Config == nil {
+			config.Mirrors = nil
+		}
 	}
 	if err := config.Validate(); err != nil {
 		return nil, err
@@ -57,7 +60,7 @@ func (c Client) Search(ctx context.Context, style string) ([]Station, error) {
 	}
 	ctx, cancel := context.WithTimeout(ctx, 12*time.Second)
 	defer cancel()
-	resp, err := c.searchResponse(ctx, config.BaseURL, q)
+	resp, err := c.searchResponse(ctx, config, q)
 	if err != nil {
 		return nil, err
 	}

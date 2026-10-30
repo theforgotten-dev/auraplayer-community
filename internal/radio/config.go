@@ -8,11 +8,13 @@ import (
 
 const DefaultBaseURL = "https://de1.api.radio-browser.info"
 const DefaultIcecastURL = "https://dir.xiph.org/yp.xml"
+const MaxSearchAttempts = 3
 
 // Config contains the user-editable directory and recommendation defaults.
 type Config struct {
 	Provider     string   `json:"provider"`
 	BaseURL      string   `json:"baseURL"`
+	Mirrors      []string `json:"mirrors"`
 	Styles       []string `json:"suggestedStyles"`
 	Limit        int      `json:"limit"`
 	Country      string   `json:"countryCode,omitempty"`
@@ -21,7 +23,7 @@ type Config struct {
 }
 
 func DefaultConfig() Config {
-	return Config{Provider: "radio-browser", BaseURL: DefaultBaseURL, Styles: []string{"rock", "pop", "jazz", "classical", "electronic", "ambient", "latin", "blues"}, Limit: 30, HideBroken: true, Personalized: true}
+	return Config{Provider: "radio-browser", BaseURL: DefaultBaseURL, Mirrors: []string{DefaultBaseURL}, Styles: []string{"rock", "pop", "jazz", "classical", "electronic", "ambient", "latin", "blues"}, Limit: 30, HideBroken: true, Personalized: true}
 }
 
 func (c Config) Validate() error {
@@ -37,6 +39,15 @@ func (c Config) Validate() error {
 	}
 	if c.Limit < 1 || c.Limit > 30 {
 		return errors.New("el limite de radios debe estar entre 1 y 30")
+	}
+	if len(c.Mirrors) > 64 {
+		return errors.New("configura hasta 64 espejos de radio")
+	}
+	for _, mirror := range c.Mirrors {
+		u, err := url.Parse(mirror)
+		if err != nil || !ValidURL(mirror) || u.RawQuery != "" || u.Fragment != "" || len(mirror) > 2048 {
+			return errors.New("cada espejo debe ser una URL HTTP/HTTPS sin consulta ni fragmento")
+		}
 	}
 	if len(c.Country) != 0 && (len(c.Country) != 2 || c.Country[0] < 'A' || c.Country[0] > 'Z' || c.Country[1] < 'A' || c.Country[1] > 'Z') {
 		return errors.New("usa un codigo de pais de dos letras, como CL, o dejalo vacio")
