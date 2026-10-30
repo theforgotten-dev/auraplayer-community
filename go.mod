@@ -7,7 +7,7 @@ require (
 	gioui.org/x v0.10.3
 	git.sr.ht/~jackmordaunt/nativeaudio v1.2.0
 	github.com/ebitengine/oto/v3 v3.5.1
-	github.com/ebitengine/purego v0.11.0
+	github.com/ebitengine/purego v0.11.2
 	github.com/gopxl/beep/v2 v2.1.1
 	github.com/hajimehoshi/go-mp3 v0.3.4
 	go.senan.xyz/taglib v0.14.0
