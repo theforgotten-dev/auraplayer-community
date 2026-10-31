@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"go.senan.xyz/taglib"
+	"playerdoit/internal/audius"
 
 	"playerdoit/internal/audio"
 	"playerdoit/internal/audio/otoengine"
@@ -34,6 +35,13 @@ const (
 )
 
 type Track struct {
+	Provider   string  `json:"provider,omitempty"`
+	ProviderID string  `json:"providerID,omitempty"`
+	Artist     string  `json:"artist,omitempty"`
+	Permalink  string  `json:"permalink,omitempty"`
+	ArtworkURL string  `json:"artworkURL,omitempty"`
+	License    string  `json:"license,omitempty"`
+	Copyright  string  `json:"copyright,omitempty"`
 	Live       bool    `json:"live"`
 	LibMPV     bool    `json:"libmpv"`
 	Video      bool    `json:"video"`
@@ -59,9 +67,10 @@ type Snapshot struct {
 }
 
 type Controller struct {
-	tone       dsp.ToneConfig
-	toneStream *dsp.ToneStream
-	mu         sync.Mutex
+	audiusSources map[string]audius.Config
+	tone          dsp.ToneConfig
+	toneStream    *dsp.ToneStream
+	mu            sync.Mutex
 
 	engine           audio.Engine
 	player           audio.Player
@@ -459,12 +468,21 @@ func (c *Controller) loadLocked(index int) error {
 
 func (c *Controller) loadMediaLocked(index int) error {
 	track := c.queue[index]
+	path := track.Path
+	if track.Provider == "audius" {
+		var err error
+		track, path, err = c.resolveAudiusLocked(track)
+		if err != nil {
+			return err
+		}
+		c.queue[index] = track
+	}
 	var p video.Player
 	var err error
 	if track.Video {
-		p, err = video.Open(track.Path)
+		p, err = video.Open(path)
 	} else {
-		p, err = video.OpenAudio(track.Path)
+		p, err = video.OpenAudio(path)
 	}
 	if err != nil {
 		return err
@@ -487,7 +505,7 @@ func (c *Controller) loadMediaLocked(index int) error {
 	c.player = p
 	c.currentIndex = index
 	c.queue[index].LibMPV = true
-	if !track.Live {
+	if !track.Live && track.Provider == "" {
 		c.queue[index].Codec = strings.TrimPrefix(strings.ToUpper(filepath.Ext(track.Path)), ".")
 	}
 	c.queue[index].Duration = p.Duration().Seconds()
