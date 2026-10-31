@@ -172,7 +172,7 @@ func openMedia(path string, withVideo bool) (Player, error) {
 	if p.handle == 0 {
 		return nil, errors.New("create libmpv player failed")
 	}
-	for _, setting := range [][2]string{{"config", "no"}, {"terminal", "no"}, {"vo", "libmpv"}, {"hwdec", "no"}, {"pause", "yes"}, {"keep-open", "yes"}, {"idle", "yes"}, {"audio-display", "no"}, {"osc", "no"}, {"input-default-bindings", "no"}, {"sub-auto", "no"}, {"sub-visibility", "yes"}} {
+	for _, setting := range [][2]string{{"config", "no"}, {"cache-on-disk", "no"}, {"terminal", "no"}, {"vo", "libmpv"}, {"hwdec", "no"}, {"pause", "yes"}, {"keep-open", "yes"}, {"idle", "yes"}, {"audio-display", "no"}, {"osc", "no"}, {"input-default-bindings", "no"}, {"sub-auto", "no"}, {"sub-visibility", "yes"}} {
 		if code := a.option(p.handle, setting[0], setting[1]); code < 0 {
 			a.destroy(p.handle)
 			return nil, fmt.Errorf("set video option %s: libmpv error %d", setting[0], code)

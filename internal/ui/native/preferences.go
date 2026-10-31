@@ -8,11 +8,13 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"playerdoit/internal/audius"
 	"playerdoit/internal/dsp"
 	"playerdoit/internal/radio"
 )
 
 type Preferences struct {
+	Audius               audius.Config  `json:"audius"`
 	SpectrumRGB          bool           `json:"spectrumRGB"`
 	SpectrumCycleSeconds int            `json:"spectrumCycleSeconds"`
 	Tone                 dsp.ToneConfig `json:"tone"`
@@ -30,9 +32,12 @@ type Preferences struct {
 const maxPreferencesBytes = 16 * 1024
 
 func defaultPreferences() Preferences {
-	return Preferences{SpectrumCycleSeconds: 24, Radio: radio.DefaultConfig(), Version: 1, Volume: .8, Subtitles: true, Language: "spa", AutoHide: true, HideDelay: 2}
+	return Preferences{Audius: audius.DefaultConfig(), SpectrumCycleSeconds: 24, Radio: radio.DefaultConfig(), Version: 1, Volume: .8, Subtitles: true, Language: "spa", AutoHide: true, HideDelay: 2}
 }
 func (p Preferences) validate() error {
+	if err := p.Audius.Validate(); err != nil {
+		return err
+	}
 	if p.SpectrumCycleSeconds != 12 && p.SpectrumCycleSeconds != 24 && p.SpectrumCycleSeconds != 48 {
 		return errors.New("ciclo RGB fuera de rango")
 	}

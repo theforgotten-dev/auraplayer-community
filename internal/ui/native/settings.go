@@ -22,7 +22,7 @@ type settingsPanel struct {
 	draft                                            Preferences
 	message                                          string
 	openButton, closeButton, saveButton, resetButton widget.Clickable
-	tabs                                             [6]widget.Clickable
+	tabs                                             [7]widget.Clickable
 	language, delay, fullscreen, skins, compact      widget.Clickable
 	volume                                           widget.Float
 	muted, subtitles, autoHide                       widget.Bool
@@ -60,6 +60,7 @@ func (ui *UI) editPreferences(p Preferences) {
 	s := &ui.settings
 	s.draft = clonePreferences(p)
 	ui.editRadioSettings(p.Radio)
+	ui.editAudiusSettings(p.Audius)
 	ui.editTone(p.Tone)
 	s.volume.Value = float32(p.Volume)
 	s.muted.Value = p.Muted
@@ -93,6 +94,7 @@ func (ui *UI) saveSettings() {
 	s := &ui.settings
 	p := clonePreferences(s.draft)
 	p.Radio = ui.radioSettingsConfig()
+	p.Audius = ui.audiusSettingsConfig()
 	p.Tone = ui.toneConfig()
 	p.Volume = math.Round(float64(s.volume.Value)*100) / 100
 	p.Muted = s.muted.Value
@@ -120,6 +122,7 @@ func (ui *UI) saveSettings() {
 		return
 	}
 	ui.preferences = p
+	ui.editMainEQ(p.Tone)
 	path, err := preferencesPath()
 	if err == nil {
 		err = writePreferences(path, p)
@@ -199,7 +202,7 @@ func (ui *UI) layoutSettings(gtx layout.Context) layout.Dimensions {
 	gtx.Constraints.Min = gtx.Constraints.Max
 	return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 		width, height := 660, 390
-		if ui.settings.tab == 3 || ui.settings.tab == 5 {
+		if ui.settings.tab == 3 || ui.settings.tab == 5 || ui.settings.tab == 6 {
 			height = 490
 		}
 		if ui.settings.tab == 0 && ui.tonePanel.open {
@@ -220,7 +223,7 @@ func (ui *UI) layoutSettings(gtx layout.Context) layout.Dimensions {
 				}),
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					var tabs []layout.FlexChild
-					for i, name := range []string{"Audio", "Video", "Subtítulos", "Interfaz", "Descubrir", "Radios"} {
+					for i, name := range []string{"Audio", "Video", "Subtítulos", "Interfaz", "Descubrir", "Radios", "Audius"} {
 						tabs = append(tabs, layout.Flexed(1, func(gtx layout.Context) layout.Dimensions {
 							return ui.button(gtx, &ui.settings.tabs[i], name, ui.settings.tab == i)
 						}))
@@ -257,6 +260,8 @@ func (ui *UI) layoutSettingsBody(gtx layout.Context) layout.Dimensions {
 		return layout.Rigid(func(gtx layout.Context) layout.Dimensions { return ui.label(gtx, text, 11, ui.palette.Text, false) })
 	}
 	switch s.tab {
+	case 6:
+		return ui.layoutAudiusOptions(gtx)
 	case 5:
 		return ui.layoutRadioSettings(gtx)
 	case 4:
