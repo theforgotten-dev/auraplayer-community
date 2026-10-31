@@ -51,8 +51,6 @@ type fileResult struct {
 }
 
 type UI struct {
-	mainEQ        mainEQPanel
-	audiusPanel   audiusPanel
 	tonePanel     tonePanel
 	radioSettings radioSettings
 	discovery     discoveryPanel
@@ -125,11 +123,10 @@ func Run(initialPaths []string) error {
 	window.Option(
 		app.Title("Aura Player"),
 		app.Decorated(false),
-		app.Size(unit.Dp(windowWidth), unit.Dp(windowHeight+windowBarH)),
+		app.Size(unit.Dp(compactWidth), unit.Dp(compactHeight+windowBarH)),
 		app.MinSize(unit.Dp(minWidth), unit.Dp(minHeight+windowBarH)),
 	)
 	ui := newUI(window, initialPaths)
-	defer ui.closeAudiusSession()
 	defer ui.controller.Close()
 	return ui.loop()
 }
@@ -145,15 +142,13 @@ func newUI(window *app.Window, initialPaths []string) *UI {
 		controller:    player.NewController(),
 		theme:         theme,
 		skin:          skin,
-		compactMode:   false,
+		compactMode:   true,
 		fileResults:   make(chan fileResult, 16),
 		actionResults: make(chan error, 1),
 		queueButtons:  make(map[string]*widget.Clickable),
 	}
 	ui.palette = paletteFor(ui.skin)
 	ui.loadPreferences()
-	ui.editAudiusSettings(ui.preferences.Audius)
-	ui.editMainEQ(ui.preferences.Tone)
 	ui.spectrum = dsp.EmptySpectrum()
 	ui.volume.Value = float32(ui.controller.Snapshot().Volume)
 	ui.queueList.Axis = layout.Vertical
@@ -198,12 +193,10 @@ func (ui *UI) loop() error {
 
 func (ui *UI) update(gtx layout.Context) {
 	ui.updateWindowShortcuts(gtx)
-	ui.updateMainEQ(gtx)
 	ui.updateSettings(gtx)
 	ui.updateTone(gtx)
 	ui.updateDiscovery(gtx)
 	ui.updateRadioSettings(gtx)
-	ui.updateAudius(gtx)
 	if actions := ui.decorations.Update(gtx); actions != 0 {
 		ui.window.Perform(actions)
 	}
@@ -313,7 +306,6 @@ func (ui *UI) layoutMain(gtx layout.Context) layout.Dimensions {
 	content := func(gtx layout.Context) layout.Dimensions {
 		return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
 			layout.Rigid(ui.layoutHeader),
-			layout.Rigid(ui.layoutAudiusSearchBar),
 			layout.Flexed(1, ui.layoutWorkspace),
 			layout.Rigid(ui.layoutTransport),
 		)
@@ -556,25 +548,17 @@ func (ui *UI) layoutHeader(gtx layout.Context) layout.Dimensions {
 }
 
 func (ui *UI) layoutWorkspace(gtx layout.Context) layout.Dimensions {
+	if ui.isCompact(gtx) {
+		return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
+			layout.Flexed(0.85, ui.layoutQueue),
+			layout.Flexed(1.4, ui.layoutPlayerContext),
+		)
+	}
 	return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(unit.Dp(ui.spacing()))}.Layout(gtx,
-		layout.Flexed(.65, ui.layoutListeningColumn),
-		layout.Flexed(1.95, ui.layoutAudiusAndEQ),
+		layout.Flexed(.85, ui.layoutQueue),
+		layout.Flexed(1.45, ui.layoutPlayerContext),
+		layout.Flexed(.85, ui.layoutMetadata),
 	)
-}
-
-func (ui *UI) layoutAudiusAndEQ(gtx layout.Context) layout.Dimensions {
-	content := func(gtx layout.Context) layout.Dimensions {
-		if ui.audiusPanel.showPlayer {
-			return ui.layoutSpectrum(gtx)
-		}
-		return ui.layoutAudiusResults(gtx)
-	}
-	if gtx.Constraints.Max.X < gtx.Dp(640) {
-		return layout.Flex{Axis: layout.Vertical, Gap: gtx.Dp(8)}.Layout(gtx,
-			layout.Flexed(1, content), layout.Flexed(1, ui.layoutMainEQ))
-	}
-	return layout.Flex{Gap: gtx.Dp(8)}.Layout(gtx,
-		layout.Flexed(1.2, content), layout.Flexed(.75, ui.layoutMainEQ))
 }
 
 func (ui *UI) layoutPlayerContext(gtx layout.Context) layout.Dimensions {
@@ -617,9 +601,6 @@ func (ui *UI) layoutNowPlayingCard(gtx layout.Context) layout.Dimensions {
 			layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 				w, h := gtx.Dp(58), gtx.Dp(48)
 				gtx.Constraints = layout.Exact(image.Pt(w, h))
-				if track != nil && track.Provider == "audius" {
-					return ui.layoutAudiusArtwork(gtx, track.ProviderID)
-				}
 				return ui.outlineBox(gtx, ui.palette.LineHot, func(gtx layout.Context) layout.Dimensions {
 					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 						glyph := "[●══●]\n|░░░░|\n[AURA]"
@@ -642,18 +623,6 @@ func (ui *UI) layoutNowPlayingCard(gtx layout.Context) layout.Dimensions {
 					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						return ui.singleLine(gtx, title, 13, ui.palette.Text)
-					}),
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						if track == nil || track.Provider != "audius" {
-							return layout.Dimensions{}
-						}
-						return ui.button(gtx, &ui.audiusPanel.nowPage, "Audius ↗ · Open Music License · "+track.License, false)
-					}),
-					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-						if track == nil || track.Provider != "audius" || track.Copyright == "" {
-							return layout.Dimensions{}
-						}
-						return ui.singleLine(gtx, track.Copyright, 9, ui.palette.Muted)
 					}),
 					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 						return layout.Flex{Axis: layout.Horizontal, Gap: gtx.Dp(4)}.Layout(gtx,

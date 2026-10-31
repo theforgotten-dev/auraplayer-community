@@ -1,6 +1,6 @@
-POLÍTICA DE PRIVACIDAD — AURA PLAYER COMMUNITY
-Última actualización: 30 de octubre de 2026
-Aplicable a Community para Windows, incluida su integración opcional con Audius.
+POLÍTICA DE PRIVACIDAD — AURA PLAYER
+Última actualización: 24 de octubre de 2026
+Aplicable a Aura Player para Windows, versión 1.2.1.
 
 1. RESPONSABLE Y CONTACTO
 El responsable de Aura Player es Juan Pablo Muñoz Leiva (theforgotten-dev),
@@ -25,45 +25,22 @@ no requiere crear una cuenta de Aura para reproducir archivos locales.
 Aura guarda localmente ajustes de volumen, silencio, subtítulos, idioma,
 controles e interfaz, además de la apariencia elegida. Se conservan en archivos
 de configuración del perfil de Windows de la aplicación. En una instalación
-tradicional se encuentran en %APPDATA%\auraplayer-community. En el primer inicio
-puede leerse el perfil anterior de %APPDATA%\playerdoit. También se guardan la
-configuración de directorios de radio, valoraciones de estilos, API de Audius,
-nombre de aplicación y su API Key pública opcional. No introduzca Bearer Tokens
-ni credenciales privadas en ese campo.
+tradicional suelen encontrarse en %APPDATA%\playerdoit; en una instalación
+MSIX, Windows puede administrar o redirigir la ubicación correspondiente.
 
 La versión indicada no incorpora servicios propios de publicidad,
 seguimiento publicitario, analítica de uso o envío automático de informes
 de errores al desarrollador. Esto no describe ni controla los diagnósticos
 independientes de Windows, Microsoft Store u otros servicios de su equipo.
 
-4. SERVICIOS DE RED OPCIONALES
-La búsqueda y reproducción de Audius se inicia por una acción del usuario;
-no se consulta su catálogo automáticamente al abrir la aplicación. Audius y
-sus nodos reciben la consulta, los identificadores de pistas, el nombre de
-aplicación, la API Key pública si está configurada y los datos técnicos de la
-conexión, como la dirección IP. Los nodos que sirven audio y carátulas pueden
-ser operados por terceros. La integración no solicita login, monederos, pagos
-ni credenciales de la cuenta de Audius.
-
-Las carátulas y resultados se mantienen en memoria durante la sesión y pueden
-retirarse con Vaciar. Las pistas de Audius se retiran de la cola al vaciar la
-sesión; el cierre de la aplicación finaliza la sesión. No se implementa una
-descarga permanente ni un archivo local del audio de Audius; la caché en disco
-del motor se deshabilita. Esto no controla registros o diagnósticos del sistema
-operativo ni la conservación que realizan los proveedores externos.
-
-Términos API: https://audius.co/documents/ApiTerms.pdf
-Privacidad de Audius: https://audius.co/documents/PrivacyPolicy.pdf
-Licencia musical: https://audius.org/open-music-license.pdf
-
-Las búsquedas de radio envían consultas y filtros al directorio configurado
-(Radio Browser o Icecast). La reproducción conecta con la emisora elegida.
-Actualizar espejos consulta DNS. Cada proveedor puede tratar los datos de
-conexión según sus condiciones. Cambiar una URL de API o catálogo cambia el
-destinatario de esas consultas.
-
-Community no incorpora compras ni pagos. La edición comercial es independiente
-y sus condiciones y proveedores no se trasladan automáticamente a Community.
+4. MICROSOFT STORE Y OTROS SERVICIOS
+Si adquiere Aura mediante Microsoft Store, Microsoft trata los datos de su
+cuenta, compra, pago, instalación y servicios de la tienda según sus propios
+términos y su Declaración de privacidad: https://privacy.microsoft.com/.
+Aura no solicita ni procesa dentro del reproductor el número de su tarjeta
+ni sus credenciales bancarias. El editor puede acceder a información comercial
+que Microsoft facilite mediante sus herramientas de publicación; su alcance
+depende de esos servicios y de la configuración de la cuenta del editor.
 
 Si abre archivos desde unidades de red, ubicaciones sincronizadas o contenidos
 con referencias externas, los sistemas o servicios implicados pueden generar
