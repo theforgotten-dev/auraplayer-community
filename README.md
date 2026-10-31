@@ -4,16 +4,6 @@ Reproductor multimedia libre para Windows 10 y 11 x64. Reproduce audio y video
 locales, subtítulos y radio online con Radio Browser o Icecast. Incluye cola
 compartida, ecualizador y visualizador de espectro con colores RGB configurables.
 
-La pantalla principal incluye búsqueda de canciones y artistas en **Audius**,
-carátulas cuando están disponibles, reproducción con atribución y enlace a la
-pista original. Solo se muestran pistas con acceso público al stream completo;
-no se implementan compras, login, descargas permanentes ni modo offline.
-La API y su clave pública opcional se configuran desde Opciones. La música y
-metadatos de Audius conservan sus condiciones propias, separadas de la GPL del
-código de Community: [API Terms](https://audius.co/documents/ApiTerms.pdf),
-[Open Music License](https://audius.org/open-music-license.pdf) y
-[privacidad](https://audius.co/documents/PrivacyPolicy.pdf).
-
 [Sitio oficial](https://theforgotten-dev.github.io/auraplayer-community/) ·
 [Descargar para Windows](https://theforgotten-dev.github.io/auraplayer-community/descargar.html) ·
 [Formatos compatibles](https://theforgotten-dev.github.io/auraplayer-community/formatos.html) ·
