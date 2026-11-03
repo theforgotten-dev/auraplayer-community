@@ -10,7 +10,7 @@ require (
 	github.com/ebitengine/purego v0.11.0
 	github.com/gopxl/beep/v2 v2.1.1
 	github.com/hajimehoshi/go-mp3 v0.3.4
-	go.senan.xyz/taglib v0.14.0
+	go.senan.xyz/taglib v0.15.0
 	golang.org/x/sys v0.49.0
 	gonum.org/v1/gonum v0.17.0
 )
