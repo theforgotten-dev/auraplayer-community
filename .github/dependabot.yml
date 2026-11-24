@@ -5,10 +5,24 @@ updates:
     target-branch: dev
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+      day: monday
+      time: "13:17"
+      timezone: America/Santiago
+    open-pull-requests-limit: 1
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
   - package-ecosystem: github-actions
     directory: /
     target-branch: dev
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+      day: monday
+      time: "13:17"
+      timezone: America/Santiago
+    open-pull-requests-limit: 1
+    groups:
+      github-actions:
+        patterns:
+          - "*"
