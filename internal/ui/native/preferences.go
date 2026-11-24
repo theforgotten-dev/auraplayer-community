@@ -27,6 +27,8 @@ type Preferences struct {
 	HideDelay            int            `json:"hideDelaySeconds"`
 }
 
+const maxPreferencesBytes = 16 * 1024
+
 func defaultPreferences() Preferences {
 	return Preferences{SpectrumCycleSeconds: 24, Radio: radio.DefaultConfig(), Version: 1, Volume: .8, Subtitles: true, Language: "spa", AutoHide: true, HideDelay: 2}
 }
@@ -85,7 +87,7 @@ func readPreferences(path string) (Preferences, error) {
 		return Preferences{}, err
 	}
 	defer f.Close()
-	d := json.NewDecoder(io.LimitReader(f, 16*1024+1))
+	d := json.NewDecoder(io.LimitReader(f, maxPreferencesBytes+1))
 	d.DisallowUnknownFields()
 	p := defaultPreferences()
 	if err := d.Decode(&p); err != nil {
@@ -104,6 +106,9 @@ func writePreferences(path string, p Preferences) error {
 	data, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
 		return err
+	}
+	if len(data) > maxPreferencesBytes {
+		return errors.New("las preferencias superan el límite de 16 KiB; reduce estilos o espejos")
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err

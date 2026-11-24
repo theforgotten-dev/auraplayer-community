@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +19,32 @@ import (
 	"playerdoit/internal/dsp"
 	"playerdoit/internal/player"
 )
+
+func TestOversizedPreferencesDoNotReplaceSavedProfile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "preferences.json")
+	p := defaultPreferences()
+	if err := writePreferences(path, p); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.Radio.Mirrors = make([]string, 64)
+	for i := range p.Radio.Mirrors {
+		p.Radio.Mirrors[i] = "https://mirror.example/" + strings.Repeat("a", 300)
+	}
+	if err := p.validate(); err != nil {
+		t.Fatal(err)
+	}
+	if err := writePreferences(path, p); err == nil {
+		t.Fatal("accepted a profile larger than the reader permits")
+	}
+	after, err := os.ReadFile(path)
+	if err != nil || !reflect.DeepEqual(before, after) {
+		t.Fatalf("saved profile changed after rejected write: %v", err)
+	}
+}
 
 func TestPreferencesRoundTripAndReplacement(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "settings", "preferences.json")
